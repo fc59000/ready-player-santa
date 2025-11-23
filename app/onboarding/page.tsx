@@ -65,15 +65,25 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-100">
-      <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-6">
-          Bienvenue ! Choisis ton pseudo 🎮
-        </h1>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#020617] via-[#0f172a] to-[#020617] px-4">
+      <div className="bg-[#0f172a] border border-zinc-700/50 rounded-2xl p-8 w-full max-w-md shadow-2xl">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="text-5xl mb-4">🎮</div>
+          <h1 className="text-2xl font-bold text-white mb-2">
+            Bienvenue dans l'arène !
+          </h1>
+          <p className="text-sm text-zinc-400">
+            Choisis ton pseudo de joueur
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div>
-            <label htmlFor="pseudo" className="block text-sm font-medium mb-2">
+            <label
+              htmlFor="pseudo"
+              className="block text-sm font-semibold text-white mb-2"
+            >
               Ton pseudo
             </label>
             <input
@@ -84,23 +94,39 @@ export default function OnboardingPage() {
               required
               minLength={2}
               maxLength={20}
-              className="w-full px-4 py-2 border border-zinc-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full px-4 py-3 bg-zinc-900 border border-zinc-700 text-white rounded-xl focus:outline-none focus:border-[#7dd3fc] transition placeholder:text-zinc-500"
               placeholder="Ex: SnowWarrior"
             />
+            <p className="text-xs text-zinc-500 mt-2">
+              Entre 2 et 20 caractères
+            </p>
           </div>
 
           {error && (
-            <p className="text-red-600 text-sm text-center">{error}</p>
+            <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl text-sm text-center">
+              {error}
+            </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white py-2 rounded hover:bg-zinc-800 transition disabled:bg-zinc-400"
+            className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
+              loading
+                ? "bg-zinc-700 text-zinc-400 cursor-wait"
+                : "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 hover:shadow-lg hover:shadow-green-500/30"
+            }`}
           >
-            {loading ? "Création..." : "Continuer"}
+            {loading ? "Création..." : "🚀 Continuer"}
           </button>
         </form>
+
+        {/* Info box */}
+        <div className="mt-6 bg-zinc-900/50 border border-zinc-700/30 rounded-xl p-4">
+          <p className="text-xs text-zinc-400 text-center">
+            💡 Ce pseudo sera visible par les autres joueurs
+          </p>
+        </div>
       </div>
     </div>
   );
