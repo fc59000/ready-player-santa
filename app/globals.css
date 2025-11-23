@@ -1,40 +1,65 @@
 @import "tailwindcss";
 
-/* Styles d’origine Next.js */
+/* Variables de couleur sombre */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #020617;
+  --foreground: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: #f3f4f6 !important;   /* gris clair lisible */
-  color: #111827 !important;         /* zinc-900 */
-  font-family: Arial, Helvetica, sans-serif;
+  background: #020617 !important;
+  color: #ffffff !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
 }
 
 /* --- NAVBAR --- */
 .navbar {
-  background-color: white !important;
-  border-bottom: 1px solid #e5e7eb !important;
-  color: #111827 !important;
+  background-color: rgba(15, 23, 42, 0.9) !important;
+  border-bottom: 1px solid rgba(113, 113, 122, 0.5) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(8px);
 }
 
 /* --- TITRES / TEXTES --- */
-h1, h2, h3, p, span, a {
-  color: #111827 !important;
+h1, h2, h3 {
+  color: #ffffff !important;
+}
+
+p, span {
+  color: #e4e4e7 !important;
+}
+
+a {
+  color: #7dd3fc !important;
+}
+
+a:hover {
+  color: #38bdf8 !important;
+  text-shadow: 0 0 8px currentColor;
 }
 
 /* --- Bouton principal --- */
 .btn-primary {
-  background-color: black !important;
+  background: linear-gradient(to right, #2563eb, #7c3aed) !important;
   color: white !important;
   padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  transition: background 0.2s;
+  border-radius: 0.75rem;
+  transition: all 0.2s;
+  border: 1px solid rgba(125, 211, 252, 0.3);
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
 }
 
 .btn-primary:hover {
-  background-color: #1f2937 !important; /* gris foncé */
+  background: linear-gradient(to right, #1d4ed8, #6d28d9) !important;
+  box-shadow: 0 0 30px rgba(37, 99, 235, 0.5);
+  transform: scale(1.02);
 }
 
 /* --- Cards du dashboard --- */
@@ -42,23 +67,46 @@ h1, h2, h3, p, span, a {
   display: block;
   padding: 1.5rem;
   border-radius: 0.75rem;
-  border: 1px solid #d1d5db !important; /* gray-300 */
-  background-color: white !important;
+  border: 2px solid rgba(125, 211, 252, 0.3) !important;
+  background-color: #0f172a !important;
   text-align: center;
   font-size: 1rem;
-  transition: 0.2s;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  color: #1f2937 !important; /* zinc-800 */
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  color: #ffffff !important;
 }
 
 .btn-card:hover {
-  border-color: #9ca3af !important;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  border-color: #7dd3fc !important;
+  box-shadow: 0 8px 24px rgba(125, 211, 252, 0.3);
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  transform: translateY(-2px);
 }
 
 /* --- Conteneurs --- */
 .card-box {
-  background: white !important;
-  border: 1px solid #e5e7eb !important;
-  color: #111827 !important;
+  background: #0f172a !important;
+  border: 1px solid rgba(113, 113, 122, 0.5) !important;
+  color: #ffffff !important;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Effet scanline optionnel */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.02) 0px,
+    rgba(255, 255, 255, 0.02) 1px,
+    transparent 2px,
+    transparent 4px
+  );
+  opacity: 0.3;
+  mix-blend-mode: soft-light;
+  z-index: 50;
 }
