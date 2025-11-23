@@ -52,7 +52,6 @@ export default function ArenaPage() {
 
     setUserId(user.id);
 
-    // Récupérer le pseudo
     const { data: profileData } = await supabase
       .from("profiles")
       .select("pseudo")
@@ -68,71 +67,47 @@ export default function ArenaPage() {
 
   async function loadRoom(playerUserId?: string) {
     const activeUserId = playerUserId || userId;
-    
-    console.log("🔍 [ARENA] Chargement de la room...");
-    console.log("🔍 [ARENA] userId:", activeUserId);
 
-    if (!activeUserId) {
-      console.log("❌ [ARENA] Pas de userId, on arrête");
-      return;
-    }
+    if (!activeUserId) return;
 
-    // Charger la room active
-    const { data: roomData, error: roomError } = await supabase
+    const { data: roomData } = await supabase
       .from("game_rooms")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(1)
       .single();
 
-    console.log("🔍 [ARENA] Room récupérée:", roomData);
-    console.log("🔍 [ARENA] Erreur room:", roomError);
-
     setCurrentRoom(roomData);
 
-    if (!roomData) {
-      console.log("❌ [ARENA] Aucune room trouvée");
-      return;
-    }
+    if (!roomData) return;
 
-    // Vérifier si déjà participant
-    const { data: participantData, error: participantError } = await supabase
+    const { data: participantData } = await supabase
       .from("game_participants")
       .select("*")
       .eq("room_id", roomData.id)
       .eq("player_id", activeUserId)
       .single();
 
-    console.log("🔍 [ARENA] Participant trouvé:", participantData);
-    console.log("🔍 [ARENA] Erreur participant:", participantError);
-
     setHasJoined(!!participantData);
 
-    // Charger le round en cours si existe
     if (roomData.current_round_id) {
-      console.log("🔍 [ARENA] Round en cours détecté:", roomData.current_round_id);
-
       const { data: roundData } = await supabase
         .from("game_rounds")
         .select("*")
         .eq("id", roomData.current_round_id)
         .single();
 
-      console.log("🔍 [ARENA] Round récupéré:", roundData);
       setCurrentRound(roundData);
 
       if (roundData && roundData.status === "active") {
-        // Charger la question
         const { data: questionData } = await supabase
           .from("game_questions")
           .select("*")
           .eq("id", roundData.question_id)
           .single();
 
-        console.log("🔍 [ARENA] Question récupérée:", questionData);
         setQuestion(questionData);
 
-        // Vérifier si déjà répondu
         const { data: answerData } = await supabase
           .from("game_answers")
           .select("*")
@@ -140,18 +115,13 @@ export default function ArenaPage() {
           .eq("player_id", activeUserId)
           .single();
 
-        console.log("🔍 [ARENA] Réponse existante:", answerData);
         setHasAnswered(!!answerData);
       }
 
-      // Vérifier si winner
       if (roundData && roundData.winner_id === activeUserId) {
-        console.log("🎉 [ARENA] Tu es le gagnant!");
         setIsWinner(true);
       }
     }
-
-    console.log("✅ [ARENA] Chargement terminé");
   }
 
   function subscribeToUpdates() {
@@ -213,21 +183,22 @@ export default function ArenaPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-900 text-white">
-        Chargement...
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-zinc-900 to-purple-900">
+        <div className="text-white text-2xl animate-pulse">Chargement...</div>
       </div>
     );
   }
 
   if (!currentRoom) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-900 text-white p-4">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4">⚔️ L'Arène</h1>
-          <p className="text-zinc-400">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-zinc-900 to-purple-900 p-4">
+        <div className="text-center max-w-md">
+          <div className="text-7xl mb-6 animate-bounce">⚔️</div>
+          <h1 className="text-4xl font-bold text-white mb-4">L'Arène</h1>
+          <p className="text-xl text-zinc-300 mb-2">
             Aucune partie en cours pour le moment.
           </p>
-          <p className="text-sm text-zinc-500 mt-2">
+          <p className="text-sm text-zinc-400">
             Attends que l'organisateur lance une partie.
           </p>
         </div>
@@ -237,17 +208,18 @@ export default function ArenaPage() {
 
   if (!hasJoined) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-900 text-white p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-zinc-900 to-purple-900 p-4">
         <div className="text-center max-w-md">
-          <h1 className="text-4xl font-bold mb-4">⚔️ L'Arène</h1>
-          <p className="text-xl mb-2">Prêt à jouer, {pseudo} ?</p>
-          <p className="text-zinc-400 mb-6">
+          <div className="text-8xl mb-6">⚔️</div>
+          <h1 className="text-5xl font-bold text-white mb-4">L'Arène</h1>
+          <p className="text-2xl text-white mb-3">Prêt à jouer, {pseudo} ?</p>
+          <p className="text-lg text-zinc-300 mb-8">
             Une partie est ouverte. Rejoins l'arène pour participer aux
             mini-jeux !
           </p>
           <button
             onClick={joinArena}
-            className="px-8 py-4 bg-blue-600 text-white rounded-lg text-xl font-semibold hover:bg-blue-700"
+            className="px-10 py-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl text-2xl font-bold hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all shadow-2xl"
           >
             🎮 Rejoindre l'arène
           </button>
@@ -256,32 +228,30 @@ export default function ArenaPage() {
     );
   }
 
-  // En attente du début
   if (currentRoom.status === "lobby") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-900 text-white p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-zinc-900 to-purple-900 p-4">
         <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4">🎮 En attente...</h1>
-          <p className="text-zinc-400">
+          <h1 className="text-4xl font-bold text-white mb-4">
+            🎮 En attente...
+          </h1>
+          <p className="text-xl text-zinc-300 mb-2">
             Tu es connecté à l'arène, {pseudo}.
           </p>
-          <p className="text-sm text-zinc-500 mt-2">
+          <p className="text-base text-zinc-400 mb-6">
             Le jeu va bientôt commencer !
           </p>
-          <div className="mt-6">
-            <div className="animate-pulse text-4xl">⏳</div>
-          </div>
+          <div className="text-6xl animate-pulse">⏳</div>
         </div>
       </div>
     );
   }
 
-  // Mini-jeu en cours
   if (currentRoom.status === "playing" && question && !hasAnswered) {
     return (
-      <div className="min-h-screen bg-zinc-900 text-white p-4">
+      <div className="min-h-screen bg-gradient-to-br from-red-900 via-zinc-900 to-orange-900 p-4">
         <div className="max-w-2xl mx-auto py-10">
-          <h1 className="text-2xl font-bold mb-6 text-center">
+          <h1 className="text-3xl font-bold mb-8 text-center text-white">
             {question.question}
           </h1>
 
@@ -290,10 +260,10 @@ export default function ArenaPage() {
               <button
                 key={index}
                 onClick={() => submitAnswer(index)}
-                className={`p-6 rounded-lg text-xl font-semibold transition ${
+                className={`p-6 rounded-xl text-xl font-semibold transition-all transform hover:scale-105 ${
                   selectedAnswer === index
-                    ? "bg-blue-600"
-                    : "bg-zinc-800 hover:bg-zinc-700"
+                    ? "bg-blue-600 text-white shadow-2xl scale-105"
+                    : "bg-zinc-800 text-white hover:bg-zinc-700 shadow-lg"
                 }`}
               >
                 {answer}
@@ -301,7 +271,7 @@ export default function ArenaPage() {
             ))}
           </div>
 
-          <p className="text-center text-zinc-500 mt-6 text-sm">
+          <p className="text-center text-zinc-300 mt-8 text-lg">
             ⏱️ Réponds le plus vite possible !
           </p>
         </div>
@@ -309,40 +279,47 @@ export default function ArenaPage() {
     );
   }
 
-  // Réponse envoyée
   if (currentRoom.status === "playing" && hasAnswered) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-900 text-white p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-zinc-900 to-purple-900 p-4">
         <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4">✅ Réponse envoyée !</h1>
-          <p className="text-zinc-400">Attends les résultats...</p>
-          <div className="mt-6">
-            <div className="animate-pulse text-4xl">⏳</div>
+          <div className="text-7xl mb-6">✅</div>
+          <h1 className="text-4xl font-bold text-white mb-4">
+            Réponse envoyée !
+          </h1>
+          <p className="text-xl text-zinc-300">Attends les résultats...</p>
+          <div className="mt-8">
+            <div className="animate-pulse text-6xl">⏳</div>
           </div>
         </div>
       </div>
     );
   }
 
-  // Résultats
   if (currentRoom.status === "results") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-900 text-white p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-900 via-zinc-900 to-emerald-900 p-4">
         <div className="text-center">
           {isWinner ? (
             <>
-              <h1 className="text-5xl font-bold mb-4">🎉 Tu as gagné !</h1>
-              <p className="text-2xl text-green-400">
+              <div className="text-9xl mb-6 animate-bounce">🎉</div>
+              <h1 className="text-6xl font-bold text-white mb-4">
+                Tu as gagné !
+              </h1>
+              <p className="text-3xl text-green-300 mb-4">
                 Félicitations {pseudo} !
               </p>
-              <p className="text-zinc-400 mt-4">
+              <p className="text-xl text-zinc-300">
                 Tu as remporté un cadeau mystère 🎁
               </p>
             </>
           ) : (
             <>
-              <h1 className="text-3xl font-bold mb-4">Pas cette fois...</h1>
-              <p className="text-zinc-400">
+              <div className="text-8xl mb-6">😔</div>
+              <h1 className="text-4xl font-bold text-white mb-4">
+                Pas cette fois...
+              </h1>
+              <p className="text-xl text-zinc-300">
                 Continue à jouer pour gagner un cadeau !
               </p>
             </>
