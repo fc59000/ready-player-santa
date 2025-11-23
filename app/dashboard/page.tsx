@@ -71,101 +71,109 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-xl">
+      <div className="min-h-screen flex items-center justify-center bg-[#020617] text-white text-2xl">
         Chargement…
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-100 flex flex-col items-center py-10 px-4">
-      <header className="w-full max-w-3xl flex justify-between items-center mb-10">
-        <h1 className="text-2xl font-bold">
-          🎄 Ready Player Santa — Dashboard
-        </h1>
-        <button 
-          onClick={handleLogout} 
-          disabled={loading}
-          className="text-red-600 underline disabled:text-red-400"
-        >
-          Déconnexion
-        </button>
+    <div className="min-h-screen bg-gradient-to-b from-[#020617] via-[#0f172a] to-[#020617] text-white">
+      {/* Header */}
+      <header className="border-b border-zinc-700/50 bg-[#0f172a]/80 backdrop-blur">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-xl font-bold text-[#7dd3fc]">
+            🎄 READY PLAYER SANTA
+          </h1>
+          <button
+            onClick={handleLogout}
+            disabled={loading}
+            className="text-sm text-zinc-400 hover:text-red-400 transition"
+          >
+            Déconnexion
+          </button>
+        </div>
       </header>
 
-      <div className="w-full max-w-3xl bg-white shadow rounded-lg p-6 flex items-center gap-6">
-        {avatar && avatar.image_url && !imageError ? (
-          <img
-            src={avatar.image_url}
-            className="w-24 h-24 rounded-lg object-cover border"
-            alt="avatar"
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <div className="w-24 h-24 rounded-lg bg-zinc-200 flex items-center justify-center text-3xl">
-            ❔
+      {/* Main Content */}
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        {/* Profil Card */}
+        <div className="bg-[#0f172a] border border-zinc-700/50 rounded-2xl p-6 mb-8">
+          <div className="flex items-center gap-6">
+            {avatar && avatar.image_url && !imageError ? (
+              <img
+                src={avatar.image_url}
+                className="w-20 h-20 rounded-xl object-cover border-2 border-[#7dd3fc]/30"
+                alt="avatar"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-xl bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center text-4xl">
+                ❔
+              </div>
+            )}
+
+            <div>
+              <p className="text-2xl font-bold text-white mb-1">
+                {profile?.pseudo}
+              </p>
+              {avatar ? (
+                <p className="text-base text-zinc-400">
+                  Avatar : {avatar.name}
+                </p>
+              ) : (
+                <Link
+                  href="/avatars"
+                  className="text-base text-[#7dd3fc] hover:text-[#38bdf8] underline"
+                >
+                  → Choisir un avatar
+                </Link>
+              )}
+            </div>
           </div>
-        )}
-
-        <div>
-          <p className="text-xl font-semibold">{profile?.pseudo}</p>
-          {avatar ? (
-            <p className="text-sm text-zinc-500 mt-1">
-              Avatar sélectionné : {avatar.name}
-            </p>
-          ) : (
-            <Link
-              href="/avatars"
-              className="text-sm text-blue-600 underline mt-1 inline-block"
-            >
-              Aucun avatar sélectionné → Choisir un avatar
-            </Link>
-          )}
         </div>
-      </div>
 
-      <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-3 gap-6 mt-10">
-        <button
-          onClick={() => router.push("/avatars")}
-          className="p-6 bg-white shadow rounded-lg text-center hover:bg-zinc-50 transition"
-        >
-          🧙‍♂️ Choisir / changer d'avatar
-        </button>
+        {/* Actions Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <button
+            onClick={() => router.push("/avatars")}
+            className="bg-[#0f172a] border-2 border-[#7dd3fc]/30 rounded-xl p-6 text-center hover:border-[#7dd3fc] hover:bg-[#0f172a]/80 transition-all"
+          >
+            <div className="text-4xl mb-2">🧙‍♂️</div>
+            <div className="text-lg font-semibold text-white">Avatar</div>
+            <div className="text-sm text-zinc-400 mt-1">
+              Choisir / changer
+            </div>
+          </button>
 
-        <button
-          disabled
-          className="p-6 bg-zinc-200 shadow rounded-lg text-center text-zinc-500 cursor-not-allowed"
-        >
-          🎁 Mon cadeau (bientôt)
-        </button>
+          <button
+            disabled
+            className="bg-zinc-900/50 border-2 border-zinc-800 rounded-xl p-6 text-center cursor-not-allowed opacity-50"
+          >
+            <div className="text-4xl mb-2">🎁</div>
+            <div className="text-lg font-semibold text-zinc-500">
+              Mon cadeau
+            </div>
+            <div className="text-sm text-zinc-600 mt-1">Bientôt</div>
+          </button>
 
-        <button
-          onClick={() => router.push("/arena")}
-          className="p-6 bg-white shadow rounded-lg text-center hover:bg-zinc-50 transition"
-        >
-          ⚔️ Entrer dans l'Arène
-        </button>
-      </div>
-
-      <div className="mt-10 opacity-40 text-sm">
-        <p className="mb-2 font-semibold">Dev Tools (temporaire)</p>
-        <div className="flex flex-col gap-1">
-          <a className="underline" href="/login">
-            → Login
-          </a>
-          <a className="underline" href="/onboarding">
-            → Onboarding
-          </a>
-          <a className="underline" href="/avatars">
-            → Avatars
-          </a>
-          <a className="underline" href="/dashboard">
-            → Dashboard
-          </a>
-          <a className="underline" href="/arena">
-            → Arena
-          </a>
+          <button
+            onClick={() => router.push("/arena")}
+            className="bg-[#0f172a] border-2 border-[#7dd3fc]/30 rounded-xl p-6 text-center hover:border-[#7dd3fc] hover:bg-[#0f172a]/80 transition-all"
+          >
+            <div className="text-4xl mb-2">⚔️</div>
+            <div className="text-lg font-semibold text-white">L'Arène</div>
+            <div className="text-sm text-zinc-400 mt-1">Entrer</div>
+          </button>
         </div>
-      </div>
+
+        {/* Info Box */}
+        <div className="bg-[#0f172a]/60 border border-zinc-700/30 rounded-xl p-4 text-center">
+          <p className="text-sm text-zinc-400">
+            Prépare-toi pour le <span className="text-[#7dd3fc] font-semibold">11 décembre 2025</span>
+          </p>
+        </div>
+      </main>
     </div>
   );
 }
