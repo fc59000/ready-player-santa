@@ -102,39 +102,52 @@ export default function AvatarsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-xl">
+      <div className="min-h-screen flex items-center justify-center bg-[#020617] text-white text-2xl">
         Chargement…
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-100 py-10 px-4">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-2">Choisir ton avatar 🧑‍🚀</h1>
-        <p className="text-sm text-zinc-600 mb-6">
-          Chaque avatar ne peut être choisi que par une seule personne.
-        </p>
+    <div className="min-h-screen bg-gradient-to-b from-[#020617] via-[#0f172a] to-[#020617] text-white py-8 px-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Choisir ton avatar 🧙‍♂️
+          </h1>
+          <p className="text-base text-zinc-400">
+            Chaque avatar ne peut être choisi que par une seule personne.
+          </p>
+        </div>
 
+        {/* Error Message */}
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+          <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-6">
             {error}
           </div>
         )}
 
+        {/* Empty State */}
         {avatars.length === 0 && (
-          <p className="text-center text-zinc-500 py-10">
-            Aucun avatar disponible pour le moment.
-          </p>
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">🤷</div>
+            <p className="text-zinc-400 text-lg">
+              Aucun avatar disponible pour le moment.
+            </p>
+          </div>
         )}
 
-        {avatars.length > 0 && avatars.every(a => a.taken_by_user_id && a.taken_by_user_id !== userId) && (
-          <p className="text-center text-orange-600 py-10">
-            ⚠️ Tous les avatars sont déjà pris. Contacte l'organisateur.
-          </p>
-        )}
+        {/* All Taken Warning */}
+        {avatars.length > 0 &&
+          avatars.every((a) => a.taken_by_user_id && a.taken_by_user_id !== userId) && (
+            <div className="bg-orange-900/30 border border-orange-500/50 text-orange-300 px-4 py-3 rounded-xl mb-6 text-center">
+              ⚠️ Tous les avatars sont déjà pris. Contacte l'organisateur.
+            </div>
+          )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {/* Avatars Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {avatars.map((avatar) => {
             const isTaken = !!avatar.taken_by_user_id;
             const isMine = avatar.taken_by_user_id === userId;
@@ -143,47 +156,61 @@ export default function AvatarsPage() {
             return (
               <div
                 key={avatar.id}
-                className={`border rounded-xl p-4 shadow bg-white ${
-                  isTaken && !isMine ? "opacity-50" : ""
+                className={`bg-[#0f172a] border-2 rounded-xl p-4 transition-all ${
+                  isTaken && !isMine
+                    ? "border-zinc-800 opacity-50"
+                    : isMine
+                    ? "border-green-500/50 shadow-lg shadow-green-500/20"
+                    : "border-[#7dd3fc]/30 hover:border-[#7dd3fc] hover:shadow-lg hover:shadow-[#7dd3fc]/20"
                 }`}
               >
+                {/* Avatar Image */}
                 {avatar.image_url && !hasImageError ? (
                   <img
                     src={avatar.image_url}
                     alt={avatar.name}
-                    className="w-full h-40 object-cover rounded-lg"
+                    className="w-full h-48 object-cover rounded-lg"
                     onError={() => handleImageError(avatar.id)}
                   />
                 ) : (
-                  <div className="w-full h-40 bg-zinc-200 rounded-lg flex items-center justify-center text-4xl">
+                  <div className="w-full h-48 bg-zinc-800 rounded-lg flex items-center justify-center text-5xl">
                     ❔
                   </div>
                 )}
 
-                <h2 className="text-xl font-bold mt-3">{avatar.name}</h2>
-                <p className="text-sm text-zinc-600">{avatar.description}</p>
+                {/* Avatar Info */}
+                <h2 className="text-xl font-bold text-white mt-4">
+                  {avatar.name}
+                </h2>
+                <p className="text-sm text-zinc-400 mt-1">
+                  {avatar.description}
+                </p>
 
+                {/* Status Badge */}
                 {isMine && (
-                  <p className="text-sm text-green-600 mt-2">
-                    ✅ C'est ton avatar actuel
-                  </p>
+                  <div className="mt-3 inline-flex items-center gap-1 text-sm text-green-400 bg-green-900/30 px-3 py-1 rounded-full border border-green-500/30">
+                    ✅ Ton avatar actuel
+                  </div>
                 )}
 
+                {/* Action Button */}
                 <button
                   onClick={() => chooseAvatar(avatar.id)}
                   disabled={(isTaken && !isMine) || saving === avatar.id}
-                  className={`w-full mt-4 py-2 rounded font-medium transition ${
+                  className={`w-full mt-4 py-3 rounded-xl font-semibold transition-all ${
                     isTaken && !isMine
-                      ? "bg-zinc-200 text-zinc-500 cursor-not-allowed"
+                      ? "bg-zinc-800 text-zinc-600 cursor-not-allowed"
                       : saving === avatar.id
-                      ? "bg-zinc-400 text-white cursor-wait"
-                      : "bg-black text-white hover:bg-zinc-800"
+                      ? "bg-zinc-700 text-zinc-400 cursor-wait"
+                      : "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 hover:shadow-lg hover:shadow-blue-500/30"
                   }`}
                 >
                   {isTaken && !isMine
                     ? "Déjà pris"
                     : saving === avatar.id
                     ? "Sélection…"
+                    : isMine
+                    ? "Choisir à nouveau"
                     : "Choisir"}
                 </button>
               </div>
@@ -191,12 +218,13 @@ export default function AvatarsPage() {
           })}
         </div>
 
-        <div className="mt-6">
+        {/* Back Button */}
+        <div className="text-center">
           <button
             onClick={() => router.push("/dashboard")}
-            className="px-4 py-2 bg-white shadow rounded hover:bg-zinc-50 transition"
+            className="px-6 py-3 bg-[#0f172a] border border-zinc-700 text-zinc-300 rounded-xl hover:border-[#7dd3fc] hover:text-white transition-all"
           >
-            ⬅ Retour au dashboard
+            ← Retour au dashboard
           </button>
         </div>
       </div>

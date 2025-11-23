@@ -9,6 +9,7 @@ export default function GiftPage() {
 
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -18,12 +19,10 @@ export default function GiftPage() {
 
   useEffect(() => {
     async function load() {
-      // Vérifier user
       const { data } = await supabase.auth.getUser();
       if (!data.user) return router.push("/login");
       setUser(data.user);
 
-      // Charger cadeau existant
       const { data: gift } = await supabase
         .from("gifts")
         .select("*")
@@ -46,9 +45,10 @@ export default function GiftPage() {
 
     if (!user) return;
 
+    setSaving(true);
+
     let image_url = existingGift?.image_url || "";
 
-    // 1) S'il y a une nouvelle image → upload dans Supabase Storage
     if (imageFile) {
       const fileExt = imageFile.name.split(".").pop();
       const path = `${user.id}/gift.${fileExt}`;
@@ -59,6 +59,7 @@ export default function GiftPage() {
 
       if (uploadError) {
         alert("Erreur upload image : " + uploadError.message);
+        setSaving(false);
         return;
       }
 
@@ -69,7 +70,6 @@ export default function GiftPage() {
       image_url = publicUrl.publicUrl;
     }
 
-    // 2) Sauvegarde dans la table gifts
     const payload = {
       user_id: user.id,
       title,
@@ -77,13 +77,13 @@ export default function GiftPage() {
       image_url,
     };
 
-    // Si un cadeau existait, update — sinon insert
     const { error: saveError } = existingGift
       ? await supabase.from("gifts").update(payload).eq("id", existingGift.id)
       : await supabase.from("gifts").insert(payload);
 
     if (saveError) {
       alert("Erreur lors de la sauvegarde : " + saveError.message);
+      setSaving(false);
       return;
     }
 
@@ -93,66 +93,111 @@ export default function GiftPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#020617] text-white text-2xl">
         Chargement…
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-100 p-8 flex flex-col items-center">
-      <h1 className="text-3xl font-bold mb-6">🎁 Mon cadeau</h1>
+    <div className="min-h-screen bg-gradient-to-b from-[#020617] via-[#0f172a] to-[#020617] text-white py-8 px-4">
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold text-white mb-2">
+            🎁 Mon cadeau
+          </h1>
+          <p className="text-base text-zinc-400">
+            {existingGift
+              ? "Modifie ton cadeau pour le Secret Santa"
+              : "Ajoute ton cadeau pour le Secret Santa"}
+          </p>
+        </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-lg shadow-md max-w-md w-full flex flex-col gap-4"
-      >
-        <label className="font-semibold">Titre du cadeau</label>
-        <input
-          className="border px-3 py-2 rounded"
-          required
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-
-        <label className="font-semibold">Description</label>
-        <textarea
-          className="border px-3 py-2 rounded"
-          rows={3}
-          required
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-
-        <label className="font-semibold">Image</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-        />
-
-        {existingGift?.image_url && (
-          <div className="mt-4">
-            <p className="text-sm text-zinc-600 mb-2">Image actuelle :</p>
-            <img
-              src={existingGift.image_url}
-              className="w-full rounded shadow"
-              alt="Cadeau"
+        {/* Form */}
+        <form
+          onSubmit={handleSubmit}
+          className="bg-[#0f172a] border border-zinc-700/50 p-6 rounded-2xl flex flex-col gap-6"
+        >
+          {/* Title */}
+          <div>
+            <label className="block text-white font-semibold mb-2">
+              Titre du cadeau
+            </label>
+            <input
+              type="text"
+              className="w-full bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-[#7dd3fc] transition"
+              placeholder="Ex: Livre de science-fiction"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
             />
           </div>
-        )}
 
-        <button type="submit" className="btn-primary mt-4">
-          Sauvegarder 🎄
-        </button>
-      </form>
+          {/* Description */}
+          <div>
+            <label className="block text-white font-semibold mb-2">
+              Description
+            </label>
+            <textarea
+              className="w-full bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-[#7dd3fc] transition resize-none"
+              rows={4}
+              placeholder="Décris ton cadeau..."
+              required
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
 
-      <button
-        onClick={() => router.push("/dashboard")}
-        className="mt-6 underline text-zinc-700"
-      >
-        ← Retour au dashboard
-      </button>
+          {/* Image Upload */}
+          <div>
+            <label className="block text-white font-semibold mb-2">
+              Image (optionnelle)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+              className="w-full bg-zinc-900 border border-zinc-700 text-zinc-400 px-4 py-3 rounded-xl file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#7dd3fc] file:text-zinc-900 file:font-semibold file:cursor-pointer hover:file:bg-[#38bdf8] transition"
+            />
+          </div>
+
+          {/* Current Image Preview */}
+          {existingGift?.image_url && (
+            <div>
+              <p className="text-sm text-zinc-400 mb-3">Image actuelle :</p>
+              <img
+                src={existingGift.image_url}
+                className="w-full rounded-xl border border-zinc-700 shadow-lg"
+                alt="Cadeau actuel"
+              />
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={saving}
+            className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
+              saving
+                ? "bg-zinc-700 text-zinc-400 cursor-wait"
+                : "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 hover:shadow-lg hover:shadow-green-500/30"
+            }`}
+          >
+            {saving ? "Sauvegarde en cours..." : "Sauvegarder 🎄"}
+          </button>
+        </form>
+
+        {/* Back Button */}
+        <div className="text-center mt-8">
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="px-6 py-3 bg-[#0f172a] border border-zinc-700 text-zinc-300 rounded-xl hover:border-[#7dd3fc] hover:text-white transition-all"
+          >
+            ← Retour au dashboard
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
