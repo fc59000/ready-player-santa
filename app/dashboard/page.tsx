@@ -63,12 +63,6 @@ export default function Dashboard() {
     load();
   }, [router]);
 
-  async function handleLogout() {
-    setLoading(true);
-    await supabase.auth.signOut();
-    router.push("/login");
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#020617] text-white text-2xl">
@@ -78,25 +72,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#020617] via-[#0f172a] to-[#020617] text-white">
-      {/* Header */}
-      <header className="border-b border-zinc-700/50 bg-[#0f172a]/80 backdrop-blur">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-[#7dd3fc]">
-            🎄 READY PLAYER SANTA
-          </h1>
-          <button
-            onClick={handleLogout}
-            disabled={loading}
-            className="text-sm text-zinc-400 hover:text-red-400 transition"
-          >
-            Déconnexion
-          </button>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-5xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-[#020617] via-[#0f172a] to-[#020617] text-white py-8 px-4">
+      <div className="max-w-5xl mx-auto">
         {/* Profil Card */}
         <div className="bg-[#0f172a] border border-zinc-700/50 rounded-2xl p-6 mb-8">
           <div className="flex items-center gap-6">
@@ -173,7 +150,7 @@ export default function Dashboard() {
             Prépare-toi pour le <span className="text-[#7dd3fc] font-semibold">11 décembre 2025</span>
           </p>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
