@@ -111,7 +111,7 @@ export default function Dashboard() {
         </div>
 
         {/* Actions Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <button
             onClick={() => router.push("/avatars")}
             className="bg-[#0f172a] border-2 border-[#7dd3fc]/30 rounded-xl p-6 text-center hover:border-[#7dd3fc] hover:bg-[#0f172a]/80 transition-all"
@@ -124,23 +124,32 @@ export default function Dashboard() {
           </button>
 
           <button
-            disabled
-            className="bg-zinc-900/50 border-2 border-zinc-800 rounded-xl p-6 text-center cursor-not-allowed opacity-50"
+            onClick={() => router.push("/gift")}
+            className="bg-[#0f172a] border-2 border-[#7dd3fc]/30 rounded-xl p-6 text-center hover:border-[#7dd3fc] hover:bg-[#0f172a]/80 transition-all"
           >
             <div className="text-4xl mb-2">🎁</div>
-            <div className="text-lg font-semibold text-zinc-500">
+            <div className="text-lg font-semibold text-white">
               Mon cadeau
             </div>
-            <div className="text-sm text-zinc-600 mt-1">Bientôt</div>
+            <div className="text-sm text-zinc-400 mt-1">Ajouter / modifier</div>
+          </button>
+
+          <button
+            onClick={() => router.push("/wishlist")}
+            className="bg-[#0f172a] border-2 border-green-500/30 rounded-xl p-6 text-center hover:border-green-500 hover:bg-[#0f172a]/80 transition-all"
+          >
+            <div className="text-4xl mb-2">🎅</div>
+            <div className="text-lg font-semibold text-white">Liste au Père Noël</div>
+            <div className="text-sm text-zinc-400 mt-1">Liker les cadeaux</div>
           </button>
 
           <button
             onClick={() => router.push("/arena")}
-            className="bg-[#0f172a] border-2 border-[#7dd3fc]/30 rounded-xl p-6 text-center hover:border-[#7dd3fc] hover:bg-[#0f172a]/80 transition-all"
+            className="bg-[#0f172a] border-2 border-red-500/30 rounded-xl p-6 text-center hover:border-red-500 hover:bg-[#0f172a]/80 transition-all"
           >
             <div className="text-4xl mb-2">⚔️</div>
             <div className="text-lg font-semibold text-white">L'Arène</div>
-            <div className="text-sm text-zinc-400 mt-1">Entrer</div>
+            <div className="text-sm text-zinc-400 mt-1">Battle (11 déc.)</div>
           </button>
         </div>
 

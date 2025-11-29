@@ -1,0 +1,446 @@
+/* ============================================================================
+   READY PLAYER SANTA™ - Cyberpunk Design System
+   ============================================================================ */
+
+:root {
+  /* Palette unifiée */
+  --bg-deep: #000000;
+  --bg-dark: #020617;
+  --bg-mid: #0f172a;
+  --panel-base: #0a1628;
+  --panel-overlay: rgba(15, 23, 42, 0.97);
+  
+  /* Couleurs thématiques */
+  --primary: #7dd3fc;
+  --primary-glow: rgba(125, 211, 252, 0.4);
+  --accent: #f97373;
+  --accent-glow: rgba(249, 115, 115, 0.35);
+  --success: #22c55e;
+  --text: #e5f3ff;
+  --muted: #94a3b8;
+  --muted-dark: #64748b;
+  
+  /* Typographie */
+  --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  
+  /* Espacements unifiés */
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 18px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  /* Transitions unifiées */
+  --transition-fast: 0.2s ease-out;
+  --transition-base: 0.35s ease-out;
+  --transition-slow: 0.7s ease-out;
+}
+
+/* ============================================================================
+   GLOBAL RESETS & BASE
+   ============================================================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--sans);
+  background: var(--bg-dark);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+/* Background global avec effet radial */
+body {
+  background: radial-gradient(
+    circle at top,
+    var(--bg-mid) 0%,
+    var(--bg-dark) 55%,
+    var(--bg-deep) 100%
+  );
+  background-attachment: fixed;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* ============================================================================
+   SCANLINES CRT EFFECT (global)
+   ============================================================================ */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.02) 0px,
+    rgba(255, 255, 255, 0.02) 1px,
+    transparent 2px,
+    transparent 4px
+  );
+  mix-blend-mode: soft-light;
+  opacity: 0.7;
+  z-index: 9999;
+  animation: scanlineShift 8s linear infinite;
+}
+
+@keyframes scanlineShift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(2px); }
+}
+
+/* ============================================================================
+   SNOW/PARTICLES EFFECT (global)
+   ============================================================================ */
+
+body::after {
+  content: "";
+  position: fixed;
+  top: -150%;
+  left: -150%;
+  width: 400%;
+  height: 400%;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, rgba(148, 163, 184, 0.35) 0, transparent 50%),
+    radial-gradient(circle, rgba(148, 163, 184, 0.25) 0, transparent 50%),
+    radial-gradient(circle, rgba(148, 163, 184, 0.2) 0, transparent 50%);
+  background-size: 180px 180px, 280px 280px, 360px 360px;
+  background-position: 0 0, 140px 100px, 80px 200px;
+  opacity: 0.14;
+  mix-blend-mode: screen;
+  animation: snowDrift 24s linear infinite;
+  z-index: 1;
+}
+
+@keyframes snowDrift {
+  0% { transform: translate3d(0, -100px, 0); }
+  100% { transform: translate3d(-50px, 100px, 0); }
+}
+
+/* ============================================================================
+   PARTICULES COMPONENT
+   ============================================================================ */
+
+.particles-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 50%;
+  opacity: 0;
+  animation: particleFloat 20s infinite ease-in-out;
+  box-shadow: 0 0 8px var(--primary-glow);
+}
+
+@keyframes particleFloat {
+  0% { 
+    transform: translate3d(0, -100px, 0); 
+    opacity: 0; 
+  }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.4; }
+  100% { 
+    transform: translate3d(50px, 100vh, 0); 
+    opacity: 0; 
+  }
+}
+
+/* ============================================================================
+   PANELS & CARDS
+   ============================================================================ */
+
+.cyberpunk-panel {
+  padding: 42px 34px 50px;
+  border-radius: 22px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background:
+    radial-gradient(circle at top left, rgba(125, 211, 252, 0.08), transparent 65%),
+    linear-gradient(145deg, var(--panel-overlay), rgba(15, 23, 42, 1));
+  box-shadow:
+    0 0 50px rgba(15, 23, 42, 1),
+    0 28px 90px rgba(0, 0, 0, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.cyberpunk-panel::before {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  background:
+    radial-gradient(circle at 0% 0%, var(--primary-glow), transparent 60%),
+    radial-gradient(circle at 100% 100%, var(--accent-glow), transparent 60%);
+  opacity: 0.5;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  animation: panelBreath 5s ease-in-out infinite;
+}
+
+@keyframes panelBreath {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.6; }
+}
+
+.cyberpunk-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(125, 211, 252, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(125, 211, 252, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  opacity: 0.4;
+  z-index: 0;
+}
+
+/* ============================================================================
+   COUNTDOWN
+   ============================================================================ */
+
+.countdown-container {
+  width: 100%;
+  margin-bottom: var(--spacing-lg);
+}
+
+.countdown-panel {
+  padding: var(--spacing-lg) var(--spacing-md);
+  border-radius: 18px;
+  border: 1px solid rgba(125, 211, 252, 0.4);
+  background:
+    radial-gradient(circle at top, var(--primary-glow), transparent 70%),
+    rgba(15, 23, 42, 0.8);
+  box-shadow:
+    0 0 40px rgba(56, 189, 248, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.countdown-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
+.countdown-unit {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(125, 211, 252, 0.3);
+  border-radius: 12px;
+  padding: var(--spacing-md) var(--spacing-sm);
+  position: relative;
+  text-align: center;
+  transition: all var(--transition-fast);
+}
+
+.countdown-unit:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+}
+
+.countdown-number {
+  font-family: var(--mono);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-shadow: 0 0 20px var(--primary-glow);
+  display: block;
+  line-height: 1;
+  margin-bottom: var(--spacing-xs);
+}
+
+.countdown-label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: block;
+}
+
+/* ============================================================================
+   BUTTONS - Effets hover améliorés
+   ============================================================================ */
+
+.cyberpunk-btn {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--primary);
+  background: rgba(15, 23, 42, 0.85);
+  padding: 16px 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(125, 211, 252, 0.5);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  display: inline-block;
+  position: relative;
+  overflow: visible; /* IMPORTANT: changer de hidden à visible */
+}
+
+.cyberpunk-btn::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: radial-gradient(circle at 50% 50%, var(--primary-glow), transparent 70%);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.cyberpunk-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    transparent
+  );
+  transition: left 0.6s ease-out;
+  pointer-events: none;
+}
+
+.cyberpunk-btn:hover {
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+  transform: translateY(-2px);
+}
+
+.cyberpunk-btn:hover::before {
+  opacity: 1;
+}
+
+.cyberpunk-btn:hover::after {
+  left: 150%;
+}
+
+.cyberpunk-btn:active {
+  transform: translateY(0);
+}
+
+/* ============================================================================
+   TYPOGRAPHY
+   ============================================================================ */
+
+.hud-title {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.main-title {
+  font-family: var(--mono);
+  font-size: 1.3rem;
+  letter-spacing: 0.35em;
+  color: var(--primary);
+  text-transform: uppercase;
+  text-shadow: 0 0 30px var(--primary-glow);
+  animation: titleGlow 3s ease-in-out infinite;
+}
+
+@keyframes titleGlow {
+  0%, 100% { text-shadow: 0 0 30px var(--primary-glow); }
+  50% { text-shadow: 0 0 40px var(--primary-glow), 0 0 20px var(--primary); }
+}
+
+/* ============================================================================
+   ANIMATIONS UTILITIES
+   ============================================================================ */
+
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 640px) {
+  .countdown-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .countdown-number {
+    font-size: 1.8rem;
+  }
+
+  .main-title {
+    font-size: 1.1rem;
+    letter-spacing: 0.28em;
+  }
+
+  .cyberpunk-panel {
+    padding: 32px 24px 38px;
+  }
+}
+
+@keyframes bootLine {
+  0% { opacity: 0; transform: translateX(-10px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes softGlitch {
+  0%, 100% { 
+    transform: translateY(0); 
+    filter: none; 
+  }
+  45% { 
+    transform: translateY(0); 
+    filter: none; 
+  }
+  50% { 
+    transform: translateY(-1px); 
+    filter: contrast(1.02) saturate(1.03); 
+  }
+  52% { 
+    transform: translateY(1px); 
+    filter: contrast(1.04) saturate(1.05); 
+  }
+  56% { 
+    transform: translateY(0); 
+    filter: none; 
+  }
+}
+
+@keyframes badgePulse {
+  0%, 100% { 
+    transform: scale(1); 
+    box-shadow: 0 0 16px rgba(249, 115, 115, 0.7);
+  }
+  50% { 
+    transform: scale(1.08); 
+    box-shadow: 0 0 24px rgba(249, 115, 115, 0.9);
+  }
+}
