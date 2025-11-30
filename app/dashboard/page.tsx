@@ -23,6 +23,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [avatar, setAvatar] = useState<Avatar | null>(null);
   const [imageError, setImageError] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -55,6 +56,17 @@ export default function Dashboard() {
           .single();
 
         setAvatar(avatarData);
+      }
+
+      // Vérifier si admin
+      const { data: adminData } = await supabase
+        .from("admins")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (adminData) {
+        setIsAdmin(true);
       }
 
       setLoading(false);
@@ -109,6 +121,22 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* BOUTON ADMIN SI ADMIN */}
+        {isAdmin && (
+          <div className="mb-8">
+            <button
+              onClick={() => router.push("/admin/game")}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 border-2 border-purple-400 rounded-xl p-6 text-center hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg"
+            >
+              <div className="text-5xl mb-2">👑</div>
+              <div className="text-2xl font-bold text-white">MODE ADMIN</div>
+              <div className="text-sm text-purple-200 mt-1">
+                Pilotage de l'arène • Gestion des mini-jeux
+              </div>
+            </button>
+          </div>
+        )}
 
         {/* Actions Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

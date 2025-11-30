@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr">
+    <html suppressHydrationWarning>
       <body>
         {/* NAVBAR - Client Component qui gère l'état */}
         <Navbar />

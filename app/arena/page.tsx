@@ -38,32 +38,65 @@ export default function ArenaPage() {
   const [isWinner, setIsWinner] = useState(false);
 
   useEffect(() => {
-    init();
-  }, []);
+    let channel: any;
 
-  async function init() {
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData?.user;
+    async function init() {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user;
 
-    if (!user) {
-      router.push("/login");
-      return;
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      setUserId(user.id);
+
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("pseudo")
+        .eq("id", user.id)
+        .single();
+
+      setPseudo(profileData?.pseudo || "Joueur");
+
+      await loadRoom(user.id);
+
+      // Souscription Realtime
+      channel = supabase
+        .channel("arena_updates")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "game_rooms" },
+          () => {
+            console.log("🔄 Update game_rooms détecté");
+            loadRoom(user.id);
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "game_rounds" },
+          () => {
+            console.log("🔄 Update game_rounds détecté");
+            loadRoom(user.id);
+          }
+        )
+        .subscribe((status) => {
+          console.log("📡 Subscription status:", status);
+        });
+
+      setLoading(false);
     }
 
-    setUserId(user.id);
+    init();
 
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("pseudo")
-      .eq("id", user.id)
-      .single();
-
-    setPseudo(profileData?.pseudo || "Joueur");
-
-    await loadRoom(user.id);
-    subscribeToUpdates();
-    setLoading(false);
-  }
+    // Cleanup function
+    return () => {
+      if (channel) {
+        console.log("🧹 Cleanup: removing channel");
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [router]);
 
   async function loadRoom(playerUserId?: string) {
     const activeUserId = playerUserId || userId;
@@ -122,26 +155,6 @@ export default function ArenaPage() {
         setIsWinner(true);
       }
     }
-  }
-
-  function subscribeToUpdates() {
-    const channel = supabase
-      .channel("arena_updates")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "game_rooms" },
-        () => loadRoom()
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "game_rounds" },
-        () => loadRoom()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }
 
   async function joinArena() {

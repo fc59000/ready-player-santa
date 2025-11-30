@@ -30,7 +30,8 @@ type Participant = {
 type Gift = {
   id: string;
   title: string;
-  user_id : string;
+  user_id: string;
+  winner_player_id: string | null;
 };
 
 type Question = {
@@ -46,8 +47,8 @@ export default function AdminGamePage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentRoom, setCurrentRoom] = useState<GameRoom | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [gifts, setGifts] = useState<Gift[]>([]);
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [availableGifts, setAvailableGifts] = useState<Gift[]>([]);
+  const [availableQuestions, setAvailableQuestions] = useState<Question[]>([]);
   const [selectedGiftId, setSelectedGiftId] = useState<string>("");
   const [selectedQuestionId, setSelectedQuestionId] = useState<string>("");
   const [currentRound, setCurrentRound] = useState<GameRound | null>(null);
@@ -113,22 +114,37 @@ export default function AdminGamePage() {
 
         setCurrentRound(roundData);
       }
+
+      // 🆕 Charger UNIQUEMENT les cadeaux disponibles (sans gagnant)
+      const { data: giftsData } = await supabase
+        .from("gifts")
+        .select("id, title, user_id, winner_player_id")
+        .is("winner_player_id", null);
+
+      setAvailableGifts(giftsData || []);
+
+      // 🆕 Charger UNIQUEMENT les questions non utilisées dans cette room
+      const { data: usedQuestionsData } = await supabase
+        .from("room_used_questions")
+        .select("question_id")
+        .eq("room_id", roomData.id);
+
+      const usedQuestionIds = (usedQuestionsData || []).map((q) => q.question_id);
+
+      const { data: allQuestionsData } = await supabase
+        .from("game_questions")
+        .select("*");
+
+      // Filtrer les questions non utilisées
+      const availableQuestionsFiltered = (allQuestionsData || []).filter(
+        (q) => !usedQuestionIds.includes(q.id)
+      );
+
+      setAvailableQuestions(availableQuestionsFiltered);
+
+      console.log(`📦 Cadeaux disponibles: ${giftsData?.length || 0}`);
+      console.log(`❓ Questions disponibles: ${availableQuestionsFiltered.length}`);
     }
-
-    // Charger tous les cadeaux
-    const { data: giftsData } = await supabase
-      .from("gifts")
-      .select("id, title, user_id ")
-      .is("winner_player_id", null);
-
-    setGifts(giftsData || []);
-
-    // Charger toutes les questions
-    const { data: questionsData } = await supabase
-      .from("game_questions")
-      .select("*");
-
-    setQuestions(questionsData || []);
   }
 
   function subscribeToUpdates() {
@@ -179,6 +195,31 @@ export default function AdminGamePage() {
       return;
     }
 
+    // 🆕 Vérifier cas spécial : 1 joueur actif + 1 cadeau
+    const activePlayers = participants.filter((p) => !p.has_won_gift);
+    
+    if (activePlayers.length === 1 && availableGifts.length === 1) {
+      const lastPlayer = activePlayers[0];
+      const lastGift = availableGifts[0];
+
+      // Attribution automatique
+      await supabase
+        .from("gifts")
+        .update({ winner_player_id: lastPlayer.player_id })
+        .eq("id", lastGift.id);
+
+      await supabase
+        .from("game_participants")
+        .update({ has_won_gift: true })
+        .eq("room_id", currentRoom.id)
+        .eq("player_id", lastPlayer.player_id);
+
+      alert(`🎉 Attribution automatique ! ${(lastPlayer.profiles as any).pseudo} reçoit le dernier cadeau : ${lastGift.title}`);
+      
+      await loadData();
+      return;
+    }
+
     // Créer le round
     const { data: newRound, error } = await supabase
       .from("game_rounds")
@@ -197,6 +238,14 @@ export default function AdminGamePage() {
       alert("Erreur lors du démarrage du round");
       return;
     }
+
+    // 🆕 Marquer la question comme utilisée
+    await supabase
+      .from("room_used_questions")
+      .insert({
+        room_id: currentRoom.id,
+        question_id: selectedQuestionId,
+      });
 
     // Mettre à jour la room
     await supabase
@@ -239,7 +288,7 @@ export default function AdminGamePage() {
     );
 
     if (correctAnswers.length === 0) {
-      alert("Personne n'a trouvé la bonne réponse !");
+      alert("Personne n'a trouvé la bonne réponse ! Relance avec une autre question pour ce cadeau.");
       await supabase
         .from("game_rounds")
         .update({ status: "finished", ended_at: new Date().toISOString() })
@@ -312,6 +361,9 @@ export default function AdminGamePage() {
 
   if (!isAdmin) return null;
 
+  // 🆕 Calculer les joueurs actifs (qui n'ont pas encore gagné)
+  const activePlayers = participants.filter((p) => !p.has_won_gift);
+
   return (
     <div className="min-h-screen bg-zinc-900 text-white py-10 px-4">
       <div className="max-w-6xl mx-auto">
@@ -333,6 +385,25 @@ export default function AdminGamePage() {
         {/* Room active */}
         {currentRoom && (
           <>
+            {/* 🆕 Stats globales */}
+            <div className="bg-zinc-800 rounded-lg p-6 mb-6 border-2 border-cyan-500/30">
+              <h2 className="text-2xl font-semibold mb-4">📊 État de la partie</h2>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-zinc-900 p-4 rounded text-center">
+                  <p className="text-3xl font-bold text-cyan-400">{activePlayers.length}</p>
+                  <p className="text-sm text-zinc-400">Joueurs actifs</p>
+                </div>
+                <div className="bg-zinc-900 p-4 rounded text-center">
+                  <p className="text-3xl font-bold text-green-400">{availableGifts.length}</p>
+                  <p className="text-sm text-zinc-400">Cadeaux restants</p>
+                </div>
+                <div className="bg-zinc-900 p-4 rounded text-center">
+                  <p className="text-3xl font-bold text-purple-400">{availableQuestions.length}</p>
+                  <p className="text-sm text-zinc-400">Questions disponibles</p>
+                </div>
+              </div>
+            </div>
+
             {/* Participants */}
             <div className="bg-zinc-800 rounded-lg p-6 mb-6">
               <h2 className="text-2xl font-semibold mb-4">
@@ -360,20 +431,50 @@ export default function AdminGamePage() {
               <div className="bg-zinc-800 rounded-lg p-6 mb-6">
                 <h2 className="text-2xl font-semibold mb-4">Lancer un mini-jeu</h2>
 
+                {/* 🆕 Alerte si plus de cadeaux ou joueurs */}
+                {availableGifts.length === 0 && (
+                  <div className="bg-red-900/30 border border-red-500 rounded p-4 mb-4">
+                    <p className="text-red-300">🎁 Plus de cadeaux disponibles ! Tous les cadeaux ont été gagnés.</p>
+                  </div>
+                )}
+
+                {activePlayers.length === 0 && (
+                  <div className="bg-red-900/30 border border-red-500 rounded p-4 mb-4">
+                    <p className="text-red-300">👥 Plus de joueurs actifs ! Tous ont gagné.</p>
+                  </div>
+                )}
+
+                {availableQuestions.length === 0 && (
+                  <div className="bg-orange-900/30 border border-orange-500 rounded p-4 mb-4">
+                    <p className="text-orange-300">❓ Plus de questions disponibles ! Toutes ont été utilisées.</p>
+                  </div>
+                )}
+
+                {/* 🆕 Message cas spécial */}
+                {activePlayers.length === 1 && availableGifts.length === 1 && (
+                  <div className="bg-cyan-900/30 border border-cyan-500 rounded p-4 mb-4">
+                    <p className="text-cyan-300">🎯 Attribution automatique ! En lançant, le dernier joueur recevra le dernier cadeau.</p>
+                  </div>
+                )}
+
                 <div className="mb-4">
                   <label className="block text-sm mb-2">Cadeau en jeu :</label>
                   <select
                     value={selectedGiftId}
                     onChange={(e) => setSelectedGiftId(e.target.value)}
                     className="w-full p-2 bg-zinc-700 rounded"
+                    disabled={availableGifts.length === 0}
                   >
                     <option value="">-- Sélectionner un cadeau --</option>
-                    {gifts.map((g) => (
+                    {availableGifts.map((g) => (
                       <option key={g.id} value={g.id}>
                         {g.title}
                       </option>
                     ))}
                   </select>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    {availableGifts.length} cadeau(x) disponible(s)
+                  </p>
                 </div>
 
                 <div className="mb-4">
@@ -382,19 +483,28 @@ export default function AdminGamePage() {
                     value={selectedQuestionId}
                     onChange={(e) => setSelectedQuestionId(e.target.value)}
                     className="w-full p-2 bg-zinc-700 rounded"
+                    disabled={availableQuestions.length === 0}
                   >
                     <option value="">-- Sélectionner une question --</option>
-                    {questions.map((q) => (
+                    {availableQuestions.map((q) => (
                       <option key={q.id} value={q.id}>
                         {q.question}
                       </option>
                     ))}
                   </select>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    {availableQuestions.length} question(s) disponible(s)
+                  </p>
                 </div>
 
                 <button
                   onClick={startRound}
-                  disabled={!selectedGiftId || !selectedQuestionId}
+                  disabled={
+                    !selectedGiftId ||
+                    !selectedQuestionId ||
+                    activePlayers.length === 0 ||
+                    availableGifts.length === 0
+                  }
                   className="px-6 py-3 bg-blue-600 rounded hover:bg-blue-700 disabled:bg-zinc-600"
                 >
                   ▶️ Lancer le mini-jeu

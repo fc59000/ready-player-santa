@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 type GameRoom = {
@@ -14,6 +14,8 @@ type GameRound = {
   question_id: string;
   status: string;
   winner_id: string | null;
+  gift_id: string | null;
+  started_at: string | null;
 };
 
 type Participant = {
@@ -31,6 +33,7 @@ type Question = {
   question: string;
   answers: string[];
   time_limit: number;
+  correct_answer_index: number;
 };
 
 type Answer = {
@@ -51,6 +54,7 @@ export default function ArenaScreenPage() {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [winnerPseudo, setWinnerPseudo] = useState<string>("");
+  const hasAutoEndedRef = useRef(false);
 
   useEffect(() => {
     init();
@@ -103,8 +107,19 @@ export default function ArenaScreenPage() {
 
         setQuestion(questionData);
 
-        if (questionData) {
-          setTimeLeft(questionData.time_limit);
+        // Calculer le temps restant basé sur started_at
+        if (questionData && roundData.started_at) {
+          const startTime = new Date(roundData.started_at).getTime();
+          const now = Date.now();
+          const elapsed = Math.floor((now - startTime) / 1000);
+          const remaining = Math.max(0, questionData.time_limit - elapsed);
+          
+          setTimeLeft(remaining);
+          
+          // Reset le flag auto-end si nouveau round
+          hasAutoEndedRef.current = false;
+          
+          console.log(`⏱️ Timer: ${remaining}s restantes (${elapsed}s écoulées sur ${questionData.time_limit}s)`);
         }
 
         // Charger les réponses
@@ -184,6 +199,106 @@ export default function ArenaScreenPage() {
 
     return () => clearInterval(timer);
   }, [timeLeft]);
+
+  // 🆕 AUTO-END : Quand le timer atteint 0, terminer automatiquement le round
+  useEffect(() => {
+    async function autoEndRound() {
+      // IMPORTANT: timeLeft doit être exactement 0, pas null
+      if (timeLeft !== 0) return;
+      if (!currentRound || !question || !currentRoom) return;
+      if (currentRound.status !== "active") return;
+      
+      // Éviter de terminer plusieurs fois le même round
+      if (hasAutoEndedRef.current) return;
+      hasAutoEndedRef.current = true;
+
+      console.log("⏰ Timer terminé ! Auto-end du round...");
+
+      // Récupérer toutes les réponses
+      const { data: allAnswers } = await supabase
+        .from("game_answers")
+        .select("*, profiles(pseudo)")
+        .eq("round_id", currentRound.id)
+        .order("answered_at", { ascending: true });
+
+      if (!allAnswers || allAnswers.length === 0) {
+        console.log("❌ Aucune réponse reçue");
+        
+        // Marquer le round comme terminé sans gagnant
+        await supabase
+          .from("game_rounds")
+          .update({ status: "finished", ended_at: new Date().toISOString() })
+          .eq("id", currentRound.id);
+
+        await supabase
+          .from("game_rooms")
+          .update({ status: "results" })
+          .eq("id", currentRoom.id);
+
+        return;
+      }
+
+      // Filtrer les bonnes réponses
+      const correctAnswers = allAnswers.filter(
+        (a) => a.answer_index === question.correct_answer_index
+      );
+
+      if (correctAnswers.length === 0) {
+        console.log("❌ Personne n'a trouvé la bonne réponse");
+        
+        await supabase
+          .from("game_rounds")
+          .update({ status: "finished", ended_at: new Date().toISOString() })
+          .eq("id", currentRound.id);
+
+        await supabase
+          .from("game_rooms")
+          .update({ status: "results" })
+          .eq("id", currentRoom.id);
+
+        return;
+      }
+
+      // Le gagnant est le plus rapide parmi les bonnes réponses
+      const winner = correctAnswers[0];
+      console.log("🏆 Gagnant:", (winner.profiles as any).pseudo);
+
+      // Mettre à jour le round
+      await supabase
+        .from("game_rounds")
+        .update({
+          status: "finished",
+          winner_id: winner.player_id,
+          ended_at: new Date().toISOString(),
+        })
+        .eq("id", currentRound.id);
+
+      // Marquer le cadeau comme gagné
+      if (currentRound.gift_id) {
+        await supabase
+          .from("gifts")
+          .update({ winner_player_id: winner.player_id })
+          .eq("id", currentRound.gift_id);
+      }
+
+      // Marquer le participant comme ayant gagné
+      await supabase
+        .from("game_participants")
+        .update({ has_won_gift: true })
+        .eq("room_id", currentRoom.id)
+        .eq("player_id", winner.player_id);
+
+      // Mettre la room en mode résultats
+      await supabase
+        .from("game_rooms")
+        .update({ status: "results" })
+        .eq("id", currentRoom.id);
+
+      console.log("✅ Round terminé automatiquement !");
+    }
+
+    autoEndRound();
+  }, [timeLeft, currentRound, question, currentRoom]);
 
   if (loading) {
     return (
