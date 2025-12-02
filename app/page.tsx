@@ -84,7 +84,6 @@ export default function HomePage() {
               INITIALISATION EN COURS
             </div>
 
-            {/* Subheader */}
             <div
               style={{
                 fontFamily: "var(--mono)",
@@ -99,14 +98,12 @@ export default function HomePage() {
               READY PLAYER SANTA™ // PROTOCOLE DRCI
             </div>
 
-            {/* Loading description */}
             <div style={{ fontSize: "1rem", lineHeight: "1.5", marginBottom: "var(--spacing-lg)" }}>
               Chargement du <span style={{ color: "var(--primary)", fontWeight: 600 }}>noyau SantaOS</span>…  
               <br />
               Activation du module d'accueil.
             </div>
 
-            {/* Boot logs */}
             <div
               style={{
                 marginTop: "var(--spacing-md)",
@@ -129,7 +126,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Progress bar */}
             <div
               style={{
                 width: "100%",
@@ -191,7 +187,6 @@ export default function HomePage() {
           zIndex: 2,
         }}
       >
-        {/* ========== PANEL PRINCIPAL ========= */}
         <div className="cyberpunk-panel" style={{ marginBottom: "var(--spacing-xl)" }}>
           <div style={{ textAlign: "center" }}>
             <div className="hud-title fade-in-up" style={{ animationDelay: ".4s" }}>
@@ -214,7 +209,6 @@ export default function HomePage() {
               SYSTÈME INITIALISÉ – ACCÈS AUTORISÉ
             </div>
 
-            {/* Message Santa */}
             <div
               className="fade-in-up"
               style={{
@@ -235,7 +229,6 @@ Je vous accompagne.
 – Santa`}
             </div>
 
-            {/* Buttons */}
             <div
               className="fade-in-up"
               style={{
@@ -271,7 +264,6 @@ Je vous accompagne.
               </button>
             </div>
 
-            {/* Footer */}
             <div
               className="footer fade-in-up"
               style={{
@@ -290,7 +282,7 @@ Je vous accompagne.
           </div>
         </div>
 
-        {/* ========== AUTH PANEL (désactivé) ========== */}
+        {/* ========== AUTH PANEL (ACTIVÉ) ========== */}
         <div className="fade-in-up" style={{ animationDelay: ".4s", marginBottom: "var(--spacing-xl)" }}>
           <div
             style={{
@@ -307,32 +299,42 @@ Je vous accompagne.
               PRÊT À PARTICIPER AU READY PLAYER SANTA™ ?
             </div>
 
-            {/* Disabled Buttons */}
             <div style={{ display: "flex", gap: "var(--spacing-md)", justifyContent: "center", flexWrap: "wrap" }}>
-              {[["SE CONNECTER"], ["CRÉER UN COMPTE"]].map(([text]) => (
-                <button
-                  key={text}
-                  disabled
-                  style={{
-                    fontFamily: "var(--mono)",
-                    fontSize: ".8rem",
-                    letterSpacing: ".18em",
-                    padding: "14px 28px",
-                    borderRadius: "12px",
-                    color: "var(--muted-dark)",
-                    background: "rgba(15,23,42,.5)",
-                    border: "1px solid rgba(125,211,252,.15)",
-                    cursor: "not-allowed",
-                    opacity: .48,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "10px",
-                  }}
-                >
-                  <span>🔒</span>
-                  {text}
-                </button>
-              ))}
+              <button
+                onClick={() => router.push("/login")}
+                className="cyberpunk-btn"
+                style={{
+                  padding: "14px 28px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <span>▸</span>
+                SE CONNECTER
+              </button>
+              
+              <button
+                onClick={() => router.push("/login")}
+                style={{
+                  fontFamily: "var(--mono)",
+                  fontSize: ".8rem",
+                  letterSpacing: ".18em",
+                  padding: "14px 28px",
+                  borderRadius: "12px",
+                  color: "var(--muted)",
+                  background: "transparent",
+                  border: "1px solid rgba(148,163,184,.3)",
+                  cursor: "pointer",
+                  transition: "all var(--transition-fast)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <span>+</span>
+                CRÉER UN COMPTE
+              </button>
             </div>
 
             <div
@@ -340,16 +342,15 @@ Je vous accompagne.
                 marginTop: "var(--spacing-md)",
                 fontFamily: "var(--mono)",
                 fontSize: ".75rem",
-                color: "var(--primary)",
-                textShadow: "0 0 12px rgba(125,211,252,.4)",
+                color: "var(--success)",
+                textShadow: "0 0 12px rgba(34,197,94,.4)",
               }}
             >
-              🎄 INSCRIPTIONS OUVERTES TRÈS PROCHAINEMENT
+              🎄 INSCRIPTIONS OUVERTES !
             </div>
           </div>
         </div>
 
-        {/* Countdown */}
         <div className="fade-in-up" style={{ animationDelay: ".2s" }}>
           <CountdownTimer />
         </div>
