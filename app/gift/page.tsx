@@ -26,6 +26,7 @@ export default function GiftPage() {
   const [showBriefing, setShowBriefing] = useState(false);
   const [briefingText, setBriefingText] = useState("");
   const [briefingComplete, setBriefingComplete] = useState(false);
+  const [typingInterval, setTypingInterval] = useState<NodeJS.Timeout | null>(null);
 
   const fullBriefing = `▸ BRIEFING MISSION : DÉPÔT D'ARTEFACT
 
@@ -97,6 +98,11 @@ Que le meilleur gagne.
   }, [router]);
 
   function startBriefingTyping() {
+    // Nettoyer l'intervalle précédent s'il existe
+    if (typingInterval) {
+      clearInterval(typingInterval);
+    }
+
     let index = 0;
     const interval = setInterval(() => {
       if (index <= fullBriefing.length) {
@@ -104,9 +110,12 @@ Que le meilleur gagne.
         index++;
       } else {
         clearInterval(interval);
+        setTypingInterval(null);
         setBriefingComplete(true);
       }
     }, 15);
+    
+    setTypingInterval(interval);
   }
 
   function closeBriefing(dontShowAgain: boolean) {
@@ -237,7 +246,11 @@ Que le meilleur gagne.
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget && briefingComplete) {
-              closeBriefing(false);
+              if (typingInterval) {
+                clearInterval(typingInterval);
+                setTypingInterval(null);
+              }
+              setShowBriefing(false);
             }
           }}
         >
@@ -245,6 +258,8 @@ Que le meilleur gagne.
             style={{
               maxWidth: "900px",
               width: "100%",
+              maxHeight: "85vh",
+              overflowY: "auto",
               background: "radial-gradient(circle at top, rgba(125,211,252,.08), transparent 60%), rgba(15,23,42,.95)",
               border: "1px solid rgba(125,211,252,.3)",
               borderRadius: "20px",
@@ -254,6 +269,47 @@ Que le meilleur gagne.
               position: "relative",
             }}
           >
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                if (typingInterval) {
+                  clearInterval(typingInterval);
+                  setTypingInterval(null);
+                }
+                setShowBriefing(false);
+              }}
+              style={{
+                position: "absolute",
+                top: "20px",
+                right: "20px",
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                background: "rgba(239,68,68,.2)",
+                border: "2px solid rgba(239,68,68,.4)",
+                color: "var(--accent)",
+                fontSize: "1.5rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                transition: "all var(--transition-fast)",
+                zIndex: 10,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(239,68,68,.4)";
+                e.currentTarget.style.borderColor = "var(--accent)";
+                e.currentTarget.style.transform = "scale(1.1)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(239,68,68,.2)";
+                e.currentTarget.style.borderColor = "rgba(239,68,68,.4)";
+                e.currentTarget.style.transform = "scale(1)";
+              }}
+              title="Fermer"
+            >
+              ✕
+            </button>
             {/* Header */}
             <div style={{ textAlign: "center", marginBottom: "var(--spacing-xl)" }}>
               <div className="hud-title" style={{ marginBottom: "12px" }}>
@@ -292,7 +348,6 @@ Que le meilleur gagne.
                 whiteSpace: "pre-wrap",
                 lineHeight: "1.8",
                 marginBottom: "var(--spacing-xl)",
-                minHeight: "400px",
                 paddingLeft: "var(--spacing-lg)",
                 paddingRight: "var(--spacing-lg)",
               }}
@@ -322,7 +377,13 @@ Que le meilleur gagne.
                 }}
               >
                 <button
-                  onClick={() => setShowBriefing(false)}
+                  onClick={() => {
+                    if (typingInterval) {
+                      clearInterval(typingInterval);
+                      setTypingInterval(null);
+                    }
+                    setShowBriefing(false);
+                  }}
                   className="cyberpunk-btn"
                   style={{ minWidth: "250px" }}
                 >

@@ -1,8 +1,10 @@
+/** READY PLAYER SANTA™ – ARENA PLAYER **/
 "use client";
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import Particles from "@/components/Particles";
 
 type GameRoom = {
   id: string;
@@ -61,14 +63,12 @@ export default function ArenaPage() {
 
       await loadRoom(user.id);
 
-      // Souscription Realtime
       channel = supabase
         .channel("arena_updates")
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "game_rooms" },
           () => {
-            console.log("🔄 Update game_rooms détecté");
             loadRoom(user.id);
           }
         )
@@ -76,23 +76,18 @@ export default function ArenaPage() {
           "postgres_changes",
           { event: "*", schema: "public", table: "game_rounds" },
           () => {
-            console.log("🔄 Update game_rounds détecté");
             loadRoom(user.id);
           }
         )
-        .subscribe((status) => {
-          console.log("📡 Subscription status:", status);
-        });
+        .subscribe();
 
       setLoading(false);
     }
 
     init();
 
-    // Cleanup function
     return () => {
       if (channel) {
-        console.log("🧹 Cleanup: removing channel");
         supabase.removeChannel(channel);
       }
     };
@@ -100,7 +95,6 @@ export default function ArenaPage() {
 
   async function loadRoom(playerUserId?: string) {
     const activeUserId = playerUserId || userId;
-
     if (!activeUserId) return;
 
     const { data: roomData } = await supabase
@@ -194,151 +188,269 @@ export default function ArenaPage() {
     setHasAnswered(true);
   }
 
+  // ========== RENDUS ==========
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-zinc-900 to-purple-900">
-        <div className="text-white text-2xl animate-pulse">Chargement...</div>
-      </div>
+      <>
+        <Particles />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-b from-[var(--bg-dark)] to-[var(--bg-deep)]">
+          <div className="text-center">
+            <div className="text-5xl mb-6 animate-pulse">⚔️</div>
+            <div className="hud-title" style={{ marginBottom: "var(--spacing-sm)" }}>
+              CONNEXION À L&apos;ARÈNE
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--mono)",
+                fontSize: ".85rem",
+                color: "var(--muted)",
+                letterSpacing: ".15em",
+                textTransform: "uppercase",
+              }}
+            >
+              Initialisation du module de jeu...
+            </div>
+          </div>
+        </div>
+      </>
     );
   }
 
+  const wrapperStyle = {
+    minHeight: "100vh",
+    padding: "32px var(--spacing-lg)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  const cardStyle = {
+    width: "100%",
+    maxWidth: "480px",
+  };
+
   if (!currentRoom) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-zinc-900 to-purple-900 p-4">
-        <div className="text-center max-w-md">
-          <div className="text-7xl mb-6 animate-bounce">⚔️</div>
-          <h1 className="text-4xl font-bold text-white mb-4">L'Arène</h1>
-          <p className="text-xl text-zinc-300 mb-2">
-            Aucune partie en cours pour le moment.
-          </p>
-          <p className="text-sm text-zinc-400">
-            Attends que l'organisateur lance une partie.
-          </p>
+      <>
+        <Particles />
+        <div style={wrapperStyle}>
+          <div className="cyberpunk-panel fade-in-up" style={{ ...cardStyle, animationDelay: ".1s" }}>
+            <div className="hud-title" style={{ marginBottom: "var(--spacing-md)", textAlign: "center" }}>
+              L&apos;ARÈNE N&apos;EST PAS OUVERTE
+            </div>
+            <p
+              style={{
+                fontSize: "1rem",
+                color: "var(--muted)",
+                textAlign: "center",
+              }}
+            >
+              Aucune partie n&apos;est en cours pour le moment.
+              <br />
+              Attends que l&apos;organisateur lance une session.
+            </p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (!hasJoined) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-zinc-900 to-purple-900 p-4">
-        <div className="text-center max-w-md">
-          <div className="text-8xl mb-6">⚔️</div>
-          <h1 className="text-5xl font-bold text-white mb-4">L'Arène</h1>
-          <p className="text-2xl text-white mb-3">Prêt à jouer, {pseudo} ?</p>
-          <p className="text-lg text-zinc-300 mb-8">
-            Une partie est ouverte. Rejoins l'arène pour participer aux
-            mini-jeux !
-          </p>
-          <button
-            onClick={joinArena}
-            className="px-10 py-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl text-2xl font-bold hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all shadow-2xl"
-          >
-            🎮 Rejoindre l'arène
-          </button>
+      <>
+        <Particles />
+        <div style={wrapperStyle}>
+          <div className="cyberpunk-panel fade-in-up" style={{ ...cardStyle, animationDelay: ".1s" }}>
+            <div style={{ textAlign: "center", marginBottom: "var(--spacing-lg)" }}>
+              <div style={{ fontSize: "3.5rem", marginBottom: "var(--spacing-sm)" }}>⚔️</div>
+              <div className="hud-title" style={{ marginBottom: "var(--spacing-sm)" }}>
+                L&apos;ARÈNE
+              </div>
+              <div
+                style={{
+                  fontFamily: "var(--mono)",
+                  fontSize: ".8rem",
+                  color: "var(--muted)",
+                  letterSpacing: ".18em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Prêt à jouer, {pseudo} ?
+              </div>
+            </div>
+
+            <p
+              style={{
+                fontSize: ".95rem",
+                color: "var(--muted)",
+                textAlign: "center",
+                marginBottom: "var(--spacing-lg)",
+              }}
+            >
+              Une partie est ouverte. Rejoins l&apos;arène pour participer aux mini-jeux et tenter de
+              gagner des cadeaux.
+            </p>
+
+            <button
+              onClick={joinArena}
+              className="cyberpunk-btn"
+              style={{
+                width: "100%",
+                fontSize: "1rem",
+                padding: "var(--spacing-md)",
+              }}
+            >
+              🎮 Rejoindre l&apos;arène
+            </button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (currentRoom.status === "lobby") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-zinc-900 to-purple-900 p-4">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-white mb-4">
-            🎮 En attente...
-          </h1>
-          <p className="text-xl text-zinc-300 mb-2">
-            Tu es connecté à l'arène, {pseudo}.
-          </p>
-          <p className="text-base text-zinc-400 mb-6">
-            Le jeu va bientôt commencer !
-          </p>
-          <div className="text-6xl animate-pulse">⏳</div>
+      <>
+        <Particles />
+        <div style={wrapperStyle}>
+          <div className="cyberpunk-panel fade-in-up" style={{ ...cardStyle, animationDelay: ".1s" }}>
+            <div style={{ textAlign: "center", marginBottom: "var(--spacing-lg)" }}>
+              <div style={{ fontSize: "3rem", marginBottom: "var(--spacing-sm)" }}>⏳</div>
+              <div className="hud-title" style={{ marginBottom: "var(--spacing-sm)" }}>
+                EN ATTENTE DU DÉPART
+              </div>
+              <p style={{ color: "var(--muted)", fontSize: ".95rem" }}>
+                Tu es connecté à l&apos;arène, {pseudo}. Le jeu va bientôt commencer...
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (currentRoom.status === "playing" && question && !hasAnswered) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-900 via-zinc-900 to-orange-900 p-4">
-        <div className="max-w-2xl mx-auto py-10">
-          <h1 className="text-3xl font-bold mb-8 text-center text-white">
-            {question.question}
-          </h1>
+      <>
+        <Particles />
+        <div style={wrapperStyle}>
+          <div className="cyberpunk-panel fade-in-up" style={{ ...cardStyle, animationDelay: ".1s" }}>
+            <div
+              style={{
+                fontSize: "1.1rem",
+                fontWeight: 600,
+                color: "var(--text)",
+                textAlign: "center",
+                marginBottom: "var(--spacing-lg)",
+              }}
+            >
+              {question.question}
+            </div>
 
-          <div className="grid grid-cols-1 gap-4">
-            {question.answers.map((answer, index) => (
-              <button
-                key={index}
-                onClick={() => submitAnswer(index)}
-                className={`p-6 rounded-xl text-xl font-semibold transition-all transform hover:scale-105 ${
-                  selectedAnswer === index
-                    ? "bg-blue-600 text-white shadow-2xl scale-105"
-                    : "bg-zinc-800 text-white hover:bg-zinc-700 shadow-lg"
-                }`}
-              >
-                {answer}
-              </button>
-            ))}
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--spacing-md)" }}>
+              {question.answers.map((answer, index) => (
+                <button
+                  key={index}
+                  onClick={() => submitAnswer(index)}
+                  className="cyberpunk-btn"
+                  style={{
+                    padding: "var(--spacing-md)",
+                    fontSize: ".95rem",
+                    transform:
+                      selectedAnswer === index ? "scale(1.02)" : "scale(1)",
+                    boxShadow:
+                      selectedAnswer === index
+                        ? "0 0 30px rgba(125,211,252,.5)"
+                        : "none",
+                  }}
+                >
+                  {answer}
+                </button>
+              ))}
+            </div>
+
+            <p
+              style={{
+                marginTop: "var(--spacing-lg)",
+                textAlign: "center",
+                fontFamily: "var(--mono)",
+                fontSize: ".85rem",
+                color: "var(--muted)",
+                letterSpacing: ".12em",
+                textTransform: "uppercase",
+              }}
+            >
+              ⏱️ Réponds le plus vite possible !
+            </p>
           </div>
-
-          <p className="text-center text-zinc-300 mt-8 text-lg">
-            ⏱️ Réponds le plus vite possible !
-          </p>
         </div>
-      </div>
+      </>
     );
   }
 
   if (currentRoom.status === "playing" && hasAnswered) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-zinc-900 to-purple-900 p-4">
-        <div className="text-center">
-          <div className="text-7xl mb-6">✅</div>
-          <h1 className="text-4xl font-bold text-white mb-4">
-            Réponse envoyée !
-          </h1>
-          <p className="text-xl text-zinc-300">Attends les résultats...</p>
-          <div className="mt-8">
-            <div className="animate-pulse text-6xl">⏳</div>
+      <>
+        <Particles />
+        <div style={wrapperStyle}>
+          <div className="cyberpunk-panel fade-in-up" style={{ ...cardStyle, animationDelay: ".1s" }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "3.5rem", marginBottom: "var(--spacing-sm)" }}>✅</div>
+              <div className="hud-title" style={{ marginBottom: "var(--spacing-sm)" }}>
+                RÉPONSE ENVOYÉE
+              </div>
+              <p style={{ color: "var(--muted)", fontSize: ".95rem" }}>
+                Patiente quelques instants, les résultats vont apparaître sur l&apos;écran principal.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (currentRoom.status === "results") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-900 via-zinc-900 to-emerald-900 p-4">
-        <div className="text-center">
-          {isWinner ? (
-            <>
-              <div className="text-9xl mb-6 animate-bounce">🎉</div>
-              <h1 className="text-6xl font-bold text-white mb-4">
-                Tu as gagné !
-              </h1>
-              <p className="text-3xl text-green-300 mb-4">
-                Félicitations {pseudo} !
-              </p>
-              <p className="text-xl text-zinc-300">
-                Tu as remporté un cadeau mystère 🎁
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="text-8xl mb-6">😔</div>
-              <h1 className="text-4xl font-bold text-white mb-4">
-                Pas cette fois...
-              </h1>
-              <p className="text-xl text-zinc-300">
-                Continue à jouer pour gagner un cadeau !
-              </p>
-            </>
-          )}
+      <>
+        <Particles />
+        <div style={wrapperStyle}>
+          <div className="cyberpunk-panel fade-in-up" style={{ ...cardStyle, animationDelay: ".1s" }}>
+            <div style={{ textAlign: "center" }}>
+              {isWinner ? (
+                <>
+                  <div style={{ fontSize: "3.5rem", marginBottom: "var(--spacing-sm)" }}>🎉</div>
+                  <div className="hud-title" style={{ marginBottom: "var(--spacing-sm)" }}>
+                    TU AS GAGNÉ !
+                  </div>
+                  <p
+                    style={{
+                      fontSize: "1.1rem",
+                      color: "var(--success)",
+                      marginBottom: "var(--spacing-sm)",
+                    }}
+                  >
+                    Félicitations {pseudo} 🎁
+                  </p>
+                  <p style={{ color: "var(--muted)", fontSize: ".95rem" }}>
+                    Tu as remporté un cadeau mystère. Garde cet écran visible pour la remise !
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: "3.5rem", marginBottom: "var(--spacing-sm)" }}>😔</div>
+                  <div className="hud-title" style={{ marginBottom: "var(--spacing-sm)" }}>
+                    PAS CETTE FOIS...
+                  </div>
+                  <p style={{ color: "var(--muted)", fontSize: ".95rem" }}>
+                    Continue à jouer aux prochaines manches pour tenter ta chance !
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 

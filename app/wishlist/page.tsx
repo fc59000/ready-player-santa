@@ -1,8 +1,10 @@
+/** READY PLAYER SANTA™ – WISHLIST PAGE AAA ULTIMATE **/
 "use client";
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import Particles from "@/components/Particles";
 
 type Gift = {
   id: string;
@@ -22,6 +24,7 @@ export default function WishlistPage() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+  const [shellVisible, setShellVisible] = useState(false);
 
   useEffect(() => {
     loadWishlist();
@@ -36,7 +39,7 @@ export default function WishlistPage() {
 
     setUserId(userData.user.id);
 
-    // 1. Charger TOUS les cadeaux (sans relation)
+    // 1. Charger TOUS les cadeaux
     const { data: giftsData, error: giftsError } = await supabase
       .from("gifts")
       .select("*");
@@ -59,10 +62,7 @@ export default function WishlistPage() {
 
     // 4. Combiner les données
     const giftsWithInfo = (giftsData || []).map((gift: any) => {
-      // Trouver le profil
       const profile = (profilesData || []).find((p: any) => p.id === gift.user_id);
-      
-      // Calculer les likes
       const giftLikes = (likesData || []).filter((like: any) => like.gift_id === gift.id);
       
       return {
@@ -76,6 +76,7 @@ export default function WishlistPage() {
 
     setGifts(giftsWithInfo);
     setLoading(false);
+    setTimeout(() => setShellVisible(true), 300);
   }
 
   async function toggleLike(giftId: string) {
@@ -84,6 +85,21 @@ export default function WishlistPage() {
     const gift = gifts.find((g) => g.id === giftId);
     if (!gift || gift.is_mine) return;
 
+    // ✅ UPDATE OPTIMISTE INSTANTANÉ (pas de latence!)
+    setGifts(prev => prev.map(g => {
+      if (g.id === giftId) {
+        return {
+          ...g,
+          is_liked_by_me: !g.is_liked_by_me,
+          likes_count: g.is_liked_by_me 
+            ? Math.max((g.likes_count || 1) - 1, 0)
+            : (g.likes_count || 0) + 1
+        };
+      }
+      return g;
+    }));
+
+    // ✅ PUIS sauvegarde en base (en arrière-plan)
     if (gift.is_liked_by_me) {
       await supabase
         .from("gift_likes")
@@ -95,8 +111,8 @@ export default function WishlistPage() {
         .from("gift_likes")
         .insert({ user_id: userId, gift_id: giftId });
     }
-
-    loadWishlist();
+    
+    // Plus de loadWishlist() ici ! Gain de performance énorme
   }
 
   function handleImageError(giftId: string) {
@@ -105,127 +121,329 @@ export default function WishlistPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#020617] text-white text-2xl">
-        Chargement…
-      </div>
+      <>
+        <Particles />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-b from-[var(--bg-dark)] to-[var(--bg-deep)]">
+          <div className="text-center">
+            <div className="text-6xl mb-6 animate-pulse">🎅</div>
+            <div className="hud-title" style={{ marginBottom: "var(--spacing-sm)" }}>
+              CHARGEMENT LISTE DE NOËL
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--mono)",
+                fontSize: ".85rem",
+                color: "var(--muted)",
+                letterSpacing: ".15em",
+              }}
+            >
+              Analyse des cadeaux disponibles...
+            </div>
+            <div className="mt-8 flex justify-center">
+              <div className="w-12 h-12 border-4 border-zinc-700 border-t-[var(--accent)] rounded-full animate-spin"></div>
+            </div>
+          </div>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#020617] via-[#0f172a] to-[#020617] text-white py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <div
+    <>
+      <Particles />
+
+      <div
+        style={{
+          maxWidth: "1400px",
+          margin: "60px auto 80px",
+          padding: "0 var(--spacing-lg)",
+          opacity: shellVisible ? 1 : 0,
+          transform: shellVisible ? "translateY(0)" : "translateY(20px)",
+          transition: "opacity .7s ease-out, transform .7s ease-out",
+          position: "relative",
+          zIndex: 2,
+        }}
+      >
+        {/* ========== HEADER ========== */}
+        <div className="fade-in-up" style={{ animationDelay: ".2s", textAlign: "center", marginBottom: "var(--spacing-xl)" }}>
+          <div className="hud-title" style={{ marginBottom: "12px" }}>
+            MODULE LISTE DE NOËL // SANTA OS
+          </div>
+          <h1
             style={{
-              fontFamily: "var(--mono)",
-              fontSize: "0.8rem",
-              letterSpacing: "0.2em",
-              textTransform: "uppercase",
-              color: "#7dd3fc",
-              marginBottom: "12px",
-              textShadow: "0 0 20px rgba(125, 211, 252, 0.4)",
+              fontSize: "2.5rem",
+              fontWeight: 700,
+              color: "var(--text)",
+              marginBottom: "16px",
+              textShadow: "0 0 30px rgba(239,68,68,.3)",
             }}
           >
-            LISTE DE NOËL
-          </div>
-          <h1 className="text-4xl font-bold text-white mb-3">
             🎅 Liste au Père Noël
           </h1>
-          <p className="text-base text-zinc-400">
-            Like les cadeaux qui te font envie ! Le jour J, tu pourras te battre pour les gagner.
+          <p
+            style={{
+              fontSize: "1rem",
+              color: "var(--muted)",
+              maxWidth: "700px",
+              margin: "0 auto",
+              lineHeight: "1.6",
+            }}
+          >
+            Like les cadeaux qui te font envie ! Le jour J, tu pourras te battre pour les gagner.<br/>
+            <span style={{ fontSize: ".85rem", color: "var(--muted-dark)" }}>
+              Les images sont affichées au format écran (identique au Jour J).
+            </span>
           </p>
         </div>
 
-        {/* Empty State */}
+        {/* ========== EMPTY STATE ========== */}
         {gifts.length === 0 && (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">📭</div>
-            <p className="text-zinc-400 text-lg">
+          <div className="fade-in-up" style={{ animationDelay: ".4s", textAlign: "center", padding: "var(--spacing-xxl) 0" }}>
+            <div style={{ fontSize: "4rem", marginBottom: "var(--spacing-lg)" }}>📭</div>
+            <p style={{ fontSize: "1.1rem", color: "var(--muted)" }}>
               Aucun cadeau disponible pour le moment.
+            </p>
+            <p style={{ fontSize: ".9rem", color: "var(--muted-dark)", marginTop: "var(--spacing-sm)" }}>
+              Reviens quand tes collègues auront déposé leurs cadeaux !
             </p>
           </div>
         )}
 
-        {/* Gifts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {gifts.map((gift) => {
+        {/* ========== GIFTS GRID ========== */}
+        <div
+          className="fade-in-up"
+          style={{
+            animationDelay: ".4s",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+            gap: "var(--spacing-lg)",
+            marginBottom: "var(--spacing-xl)",
+          }}
+        >
+          {gifts.map((gift, i) => {
             const hasImageError = imageErrors.has(gift.id);
 
             return (
               <div
                 key={gift.id}
-                className={`bg-[#0f172a] border-2 rounded-xl overflow-hidden transition-all ${
-                  gift.is_mine
-                    ? "border-green-500/50 shadow-lg shadow-green-500/20"
-                    : "border-zinc-700/50 hover:border-[#7dd3fc]/50"
-                }`}
+                className="fade-in-up"
+                style={{ animationDelay: `${0.5 + i * 0.05}s` }}
               >
-                {/* Gift Image - Format portrait */}
-                <div className="relative aspect-[832/1248] bg-zinc-900">
-                  {gift.image_url && !hasImageError ? (
-                    <img
-                      src={gift.image_url}
-                      alt={gift.title}
-                      className="w-full h-full object-cover"
-                      onError={() => handleImageError(gift.id)}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-6xl">
-                      🎁
-                    </div>
-                  )}
-
-                  {/* Badge "TON CADEAU" */}
-                  {gift.is_mine && (
-                    <div className="absolute top-3 left-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                      🎁 TON CADEAU
-                    </div>
-                  )}
-
-                  {/* Like Button */}
-                  {!gift.is_mine && (
-                    <button
-                      onClick={() => toggleLike(gift.id)}
-                      className={`absolute top-3 right-3 w-12 h-12 rounded-full flex items-center justify-center text-2xl transition-all ${
-                        gift.is_liked_by_me
-                          ? "bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50"
-                          : "bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-700"
-                      }`}
-                    >
-                      {gift.is_liked_by_me ? "❤️" : "🤍"}
-                    </button>
-                  )}
-                </div>
-
-                {/* Gift Info */}
-                <div className="p-4">
-                  <h3 className="text-xl font-bold text-white mb-2">
-                    {gift.title}
-                  </h3>
-                  <p className="text-sm text-zinc-400 mb-4 line-clamp-3">
-                    {gift.description}
-                  </p>
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t border-zinc-700/50">
-                    {/* User Info */}
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center text-sm font-bold">
-                        {gift.is_mine ? "🎁" : (gift.pseudo?.charAt(0).toUpperCase() || "?")}
-                      </div>
-                      <span className="text-sm text-zinc-400">
-                        {gift.is_mine ? "Toi" : gift.pseudo}
-                      </span>
-                    </div>
-
-                    {/* Likes Count */}
-                    {!gift.is_mine && (
-                      <div className="flex items-center gap-1 text-sm text-zinc-400">
-                        <span>❤️</span>
-                        <span>{gift.likes_count || 0}</span>
+                <div
+                  style={{
+                    background: "rgba(15,23,42,.8)",
+                    borderRadius: "16px",
+                    border: gift.is_mine
+                      ? "2px solid var(--success)"
+                      : "2px solid rgba(148,163,184,.2)",
+                    overflow: "hidden",
+                    transition: "all var(--transition-fast)",
+                    boxShadow: gift.is_mine ? "0 0 30px rgba(34,197,94,.3)" : "none",
+                    position: "relative",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-8px)";
+                    e.currentTarget.style.borderColor = gift.is_mine
+                      ? "var(--success)"
+                      : "var(--accent)";
+                    e.currentTarget.style.boxShadow = gift.is_mine
+                      ? "0 12px 40px rgba(34,197,94,.4)"
+                      : "0 12px 40px rgba(239,68,68,.3)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.borderColor = gift.is_mine
+                      ? "var(--success)"
+                      : "rgba(148,163,184,.2)";
+                    e.currentTarget.style.boxShadow = gift.is_mine
+                      ? "0 0 30px rgba(34,197,94,.3)"
+                      : "none";
+                  }}
+                >
+                  {/* Gift Image - Format PAYSAGE 16:9 (comme Jour J) */}
+                  <div style={{ position: "relative", aspectRatio: "16/9", background: "rgba(9,9,11,.9)" }}>
+                    {gift.image_url && !hasImageError ? (
+                      <img
+                        src={gift.image_url}
+                        alt={gift.title}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                        onError={() => handleImageError(gift.id)}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "4rem",
+                        }}
+                      >
+                        🎁
                       </div>
                     )}
+
+                    {/* Badge TON CADEAU */}
+                    {gift.is_mine && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "12px",
+                          left: "12px",
+                          background: "var(--success)",
+                          color: "#fff",
+                          fontSize: ".7rem",
+                          fontWeight: 700,
+                          padding: "6px 12px",
+                          borderRadius: "20px",
+                          boxShadow: "0 4px 12px rgba(34,197,94,.4)",
+                          letterSpacing: ".08em",
+                        }}
+                      >
+                        🎁 TON CADEAU
+                      </div>
+                    )}
+
+                    {/* Like Button */}
+                    {!gift.is_mine && (
+                      <button
+                        onClick={() => toggleLike(gift.id)}
+                        style={{
+                          position: "absolute",
+                          top: "12px",
+                          right: "12px",
+                          width: "48px",
+                          height: "48px",
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "1.5rem",
+                          background: gift.is_liked_by_me
+                            ? "var(--accent)"
+                            : "rgba(9,9,11,.8)",
+                          border: gift.is_liked_by_me
+                            ? "2px solid var(--accent)"
+                            : "2px solid rgba(148,163,184,.3)",
+                          cursor: "pointer",
+                          transition: "all var(--transition-fast)",
+                          boxShadow: gift.is_liked_by_me
+                            ? "0 4px 12px rgba(239,68,68,.5)"
+                            : "none",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "scale(1.15)";
+                          e.currentTarget.style.boxShadow = gift.is_liked_by_me
+                            ? "0 6px 20px rgba(239,68,68,.6)"
+                            : "0 4px 12px rgba(148,163,184,.3)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "scale(1)";
+                          e.currentTarget.style.boxShadow = gift.is_liked_by_me
+                            ? "0 4px 12px rgba(239,68,68,.5)"
+                            : "none";
+                        }}
+                      >
+                        {gift.is_liked_by_me ? "❤️" : "🤍"}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Gift Info */}
+                  <div style={{ padding: "var(--spacing-md)" }}>
+                    <h3
+                      style={{
+                        fontSize: "1.1rem",
+                        fontWeight: 600,
+                        color: "var(--text)",
+                        marginBottom: "8px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {gift.title}
+                    </h3>
+                    <p
+                      style={{
+                        fontFamily: "var(--mono)",
+                        fontSize: ".8rem",
+                        color: "var(--muted)",
+                        lineHeight: "1.5",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        marginBottom: "var(--spacing-md)",
+                      }}
+                    >
+                      {gift.description}
+                    </p>
+
+                    {/* Footer */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        paddingTop: "var(--spacing-sm)",
+                        borderTop: "1px solid rgba(148,163,184,.15)",
+                      }}
+                    >
+                      {/* User Info */}
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div
+                          style={{
+                            width: "32px",
+                            height: "32px",
+                            borderRadius: "50%",
+                            background: gift.is_mine
+                              ? "var(--success)"
+                              : "linear-gradient(135deg, var(--primary), #38bdf8)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: ".85rem",
+                            fontWeight: 700,
+                            color: "#fff",
+                          }}
+                        >
+                          {gift.is_mine ? "🎁" : (gift.pseudo?.charAt(0).toUpperCase() || "?")}
+                        </div>
+                        <span
+                          style={{
+                            fontFamily: "var(--mono)",
+                            fontSize: ".8rem",
+                            color: "var(--muted)",
+                          }}
+                        >
+                          {gift.is_mine ? "Toi" : gift.pseudo}
+                        </span>
+                      </div>
+
+                      {/* Likes Count */}
+                      {!gift.is_mine && (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            fontFamily: "var(--mono)",
+                            fontSize: ".85rem",
+                            color: gift.likes_count ? "var(--accent)" : "var(--muted-dark)",
+                            fontWeight: 600,
+                          }}
+                        >
+                          <span>❤️</span>
+                          <span>{gift.likes_count || 0}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -233,25 +451,41 @@ export default function WishlistPage() {
           })}
         </div>
 
-        {/* Info Box */}
+        {/* ========== INFO BOX ========== */}
         {gifts.length > 0 && (
-          <div className="bg-[#0f172a]/60 border border-zinc-700/30 rounded-xl p-6 text-center">
-            <p className="text-sm text-zinc-400">
-              💡 <span className="text-white font-semibold">Astuce :</span> Plus tu likes de cadeaux, plus tu auras de chances de participer aux batailles le jour J !
+          <div
+            className="fade-in-up"
+            style={{
+              animationDelay: ".7s",
+              padding: "var(--spacing-lg)",
+              borderRadius: "16px",
+              background: "rgba(15,23,42,.4)",
+              border: "1px solid rgba(148,163,184,.2)",
+              textAlign: "center",
+              marginBottom: "var(--spacing-xl)",
+            }}
+          >
+            <p
+              style={{
+                fontFamily: "var(--mono)",
+                fontSize: ".9rem",
+                color: "var(--muted)",
+                letterSpacing: ".08em",
+              }}
+            >
+              💡 <span style={{ color: "var(--text)", fontWeight: 600 }}>ASTUCE :</span> Plus tu likes de cadeaux,
+              plus tu auras de chances de participer aux batailles le jour J !
             </p>
           </div>
         )}
 
-        {/* Back Button */}
-        <div className="text-center mt-8">
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="px-6 py-3 bg-[#0f172a] border border-zinc-700 text-zinc-300 rounded-xl hover:border-[#7dd3fc] hover:text-white transition-all"
-          >
-            ← Retour au dashboard
+        {/* ========== BACK BUTTON ========== */}
+        <div className="fade-in-up" style={{ animationDelay: ".8s", textAlign: "center" }}>
+          <button onClick={() => router.push("/dashboard")} className="cyberpunk-btn">
+            ← RETOUR AU DASHBOARD
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

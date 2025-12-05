@@ -1,7 +1,9 @@
+/** READY PLAYER SANTA™ – ARENA BIG SCREEN **/
 "use client";
 
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import Particles from "@/components/Particles";
 
 type GameRoom = {
   id: string;
@@ -57,17 +59,22 @@ export default function ArenaScreenPage() {
   const hasAutoEndedRef = useRef(false);
 
   useEffect(() => {
+    let cleanup: (() => void) | undefined;
+
+    async function init() {
+      await loadRoom();
+      cleanup = subscribeToUpdates();
+      setLoading(false);
+    }
+
     init();
+
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, []);
 
-  async function init() {
-    await loadRoom();
-    subscribeToUpdates();
-    setLoading(false);
-  }
-
   async function loadRoom() {
-    // Charger la room active
     const { data: roomData } = await supabase
       .from("game_rooms")
       .select("*")
@@ -79,7 +86,6 @@ export default function ArenaScreenPage() {
 
     if (!roomData) return;
 
-    // Charger les participants
     const { data: participantsData } = await supabase
       .from("game_participants")
       .select("*, profiles(pseudo, avatar_id)")
@@ -87,7 +93,6 @@ export default function ArenaScreenPage() {
 
     setParticipants(participantsData || []);
 
-    // Charger le round en cours si existe
     if (roomData.current_round_id) {
       const { data: roundData } = await supabase
         .from("game_rounds")
@@ -98,7 +103,6 @@ export default function ArenaScreenPage() {
       setCurrentRound(roundData);
 
       if (roundData && roundData.status === "active") {
-        // Charger la question
         const { data: questionData } = await supabase
           .from("game_questions")
           .select("*")
@@ -107,22 +111,16 @@ export default function ArenaScreenPage() {
 
         setQuestion(questionData);
 
-        // Calculer le temps restant basé sur started_at
         if (questionData && roundData.started_at) {
           const startTime = new Date(roundData.started_at).getTime();
           const now = Date.now();
           const elapsed = Math.floor((now - startTime) / 1000);
           const remaining = Math.max(0, questionData.time_limit - elapsed);
-          
+
           setTimeLeft(remaining);
-          
-          // Reset le flag auto-end si nouveau round
           hasAutoEndedRef.current = false;
-          
-          console.log(`⏱️ Timer: ${remaining}s restantes (${elapsed}s écoulées sur ${questionData.time_limit}s)`);
         }
 
-        // Charger les réponses
         const { data: answersData } = await supabase
           .from("game_answers")
           .select("*, profiles(pseudo)")
@@ -132,7 +130,6 @@ export default function ArenaScreenPage() {
         setAnswers(answersData || []);
       }
 
-      // Si résultats, charger le gagnant
       if (roundData && roundData.status === "finished" && roundData.winner_id) {
         const { data: winnerData } = await supabase
           .from("profiles")
@@ -183,7 +180,7 @@ export default function ArenaScreenPage() {
     };
   }
 
-  // Timer pour le compte à rebours
+  // Timer
   useEffect(() => {
     if (timeLeft === null || timeLeft <= 0) return;
 
@@ -200,21 +197,16 @@ export default function ArenaScreenPage() {
     return () => clearInterval(timer);
   }, [timeLeft]);
 
-  // 🆕 AUTO-END : Quand le timer atteint 0, terminer automatiquement le round
+  // Auto-end round
   useEffect(() => {
     async function autoEndRound() {
-      // IMPORTANT: timeLeft doit être exactement 0, pas null
       if (timeLeft !== 0) return;
       if (!currentRound || !question || !currentRoom) return;
       if (currentRound.status !== "active") return;
-      
-      // Éviter de terminer plusieurs fois le même round
       if (hasAutoEndedRef.current) return;
+
       hasAutoEndedRef.current = true;
 
-      console.log("⏰ Timer terminé ! Auto-end du round...");
-
-      // Récupérer toutes les réponses
       const { data: allAnswers } = await supabase
         .from("game_answers")
         .select("*, profiles(pseudo)")
@@ -222,9 +214,6 @@ export default function ArenaScreenPage() {
         .order("answered_at", { ascending: true });
 
       if (!allAnswers || allAnswers.length === 0) {
-        console.log("❌ Aucune réponse reçue");
-        
-        // Marquer le round comme terminé sans gagnant
         await supabase
           .from("game_rounds")
           .update({ status: "finished", ended_at: new Date().toISOString() })
@@ -238,14 +227,11 @@ export default function ArenaScreenPage() {
         return;
       }
 
-      // Filtrer les bonnes réponses
       const correctAnswers = allAnswers.filter(
         (a) => a.answer_index === question.correct_answer_index
       );
 
       if (correctAnswers.length === 0) {
-        console.log("❌ Personne n'a trouvé la bonne réponse");
-        
         await supabase
           .from("game_rounds")
           .update({ status: "finished", ended_at: new Date().toISOString() })
@@ -259,11 +245,8 @@ export default function ArenaScreenPage() {
         return;
       }
 
-      // Le gagnant est le plus rapide parmi les bonnes réponses
       const winner = correctAnswers[0];
-      console.log("🏆 Gagnant:", (winner.profiles as any).pseudo);
 
-      // Mettre à jour le round
       await supabase
         .from("game_rounds")
         .update({
@@ -273,7 +256,6 @@ export default function ArenaScreenPage() {
         })
         .eq("id", currentRound.id);
 
-      // Marquer le cadeau comme gagné
       if (currentRound.gift_id) {
         await supabase
           .from("gifts")
@@ -281,164 +263,428 @@ export default function ArenaScreenPage() {
           .eq("id", currentRound.gift_id);
       }
 
-      // Marquer le participant comme ayant gagné
       await supabase
         .from("game_participants")
         .update({ has_won_gift: true })
         .eq("room_id", currentRoom.id)
         .eq("player_id", winner.player_id);
 
-      // Mettre la room en mode résultats
       await supabase
         .from("game_rooms")
         .update({ status: "results" })
         .eq("id", currentRoom.id);
-
-      console.log("✅ Round terminé automatiquement !");
     }
 
     autoEndRound();
   }, [timeLeft, currentRound, question, currentRoom]);
 
+  const screenWrapperStyle = {
+    minHeight: "100vh",
+    padding: "40px var(--spacing-lg)",
+    display: "flex",
+    alignItems: "stretch",
+    justifyContent: "center",
+    position: "relative" as const,
+    zIndex: 1,
+  };
+
+  const innerShellStyle = {
+    width: "100%",
+    maxWidth: "1200px",
+    margin: "0 auto",
+  };
+
+  const headerBarStyle = {
+    marginBottom: "var(--spacing-xl)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "var(--spacing-lg)",
+  };
+
+  const smallHudLabel = {
+    fontFamily: "var(--mono)",
+    fontSize: ".78rem",
+    letterSpacing: ".18em",
+    color: "var(--muted)",
+    textTransform: "uppercase" as const,
+  };
+
+  // Rendus
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-900 text-white text-3xl">
-        Chargement...
-      </div>
+      <>
+        <Particles />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-b from-[var(--bg-dark)] to-[var(--bg-deep)]">
+          <div className="text-center">
+            <div className="text-6xl mb-6 animate-pulse">⚔️</div>
+            <div className="hud-title" style={{ marginBottom: "var(--spacing-sm)" }}>
+              INITIALISATION DE L&apos;ARÈNE
+            </div>
+            <div style={smallHudLabel}>Connexion au jeu en cours...</div>
+            <div className="mt-8 flex justify-center">
+              <div className="w-12 h-12 border-4 border-zinc-700 border-t-[var(--primary)] rounded-full animate-spin"></div>
+            </div>
+          </div>
+        </div>
+      </>
     );
   }
 
   if (!currentRoom) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-900 text-white">
-        <div className="text-center">
-          <h1 className="text-6xl font-bold mb-4">🎄 Ready Player Santa</h1>
-          <p className="text-3xl text-zinc-400">En attente de la partie...</p>
+      <>
+        <Particles />
+        <div style={screenWrapperStyle}>
+          <div style={innerShellStyle}>
+            <div
+              className="cyberpunk-panel fade-in-up"
+              style={{ animationDelay: ".2s", textAlign: "center", padding: "var(--spacing-xl)" }}
+            >
+              <div className="hud-title" style={{ marginBottom: "var(--spacing-md)" }}>
+                READY PLAYER SANTA™ // L&apos;ARÈNE
+              </div>
+              <div style={smallHudLabel}>En attente du lancement de la partie</div>
+
+              <div style={{ marginTop: "var(--spacing-xl)" }}>
+                <div style={{ fontSize: "4rem", marginBottom: "var(--spacing-md)" }}>🎄</div>
+                <p
+                  style={{
+                    fontSize: "1.6rem",
+                    color: "var(--text)",
+                    marginBottom: "var(--spacing-sm)",
+                  }}
+                >
+                  Aucun jeu n&apos;est en cours pour le moment.
+                </p>
+                <p style={{ fontSize: "1rem", color: "var(--muted)" }}>
+                  Laisse cet écran affiché : il se mettra à jour automatiquement dès que la partie
+                  commencera. ✨
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
-  // Lobby — En attente des joueurs
+  // Lobby
   if (currentRoom.status === "lobby") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-zinc-900 to-purple-900 text-white p-10">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-7xl font-bold text-center mb-16 animate-pulse">
-            🎮 L'ARÈNE
-          </h1>
-
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-semibold mb-4">
-              Joueurs connectés ({participants.length})
-            </h2>
-            <p className="text-2xl text-zinc-400">
-              En attente du lancement...
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            {participants.map((p) => (
-              <div
-                key={p.id}
-                className={`p-6 rounded-xl text-center transition ${
-                  p.has_won_gift
-                    ? "bg-green-800 border-4 border-green-400"
-                    : "bg-zinc-800 border-2 border-zinc-600"
-                }`}
-              >
-                <div className="text-5xl mb-3">
-                  {p.has_won_gift ? "🏆" : "🎮"}
+      <>
+        <Particles />
+        <div style={screenWrapperStyle}>
+          <div style={innerShellStyle}>
+            <div className="fade-in-up" style={{ ...headerBarStyle, animationDelay: ".1s" }}>
+              <div>
+                <div className="hud-title" style={{ marginBottom: "6px" }}>
+                  L&apos;ARÈNE // SALLE D&apos;ATTENTE
                 </div>
-                <p className="text-2xl font-bold">
-                  {(p.profiles as any)?.pseudo}
-                </p>
-                {p.has_won_gift && (
-                  <p className="text-sm text-green-400 mt-2">A gagné !</p>
-                )}
+                <div style={smallHudLabel}>Les joueurs se connectent...</div>
               </div>
-            ))}
+              <div
+                style={{
+                  fontFamily: "var(--mono)",
+                  fontSize: ".9rem",
+                  color: "var(--primary)",
+                  textAlign: "right" as const,
+                }}
+              >
+                Joueurs connectés :{" "}
+                <span style={{ fontSize: "1.4rem", fontWeight: 700 }}>{participants.length}</span>
+              </div>
+            </div>
+
+            <div
+              className="cyberpunk-panel fade-in-up"
+              style={{ animationDelay: ".2s", padding: "var(--spacing-xl)" }}
+            >
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gap: "var(--spacing-lg)",
+                }}
+              >
+                {participants.map((p, index) => (
+                  <div
+                    key={p.id}
+                    className="fade-in-up"
+                    style={{
+                      animationDelay: `${0.25 + index * 0.03}s`,
+                      padding: "var(--spacing-md)",
+                      borderRadius: "18px",
+                      background: p.has_won_gift
+                        ? "linear-gradient(135deg, rgba(34,197,94,.18), rgba(21,128,61,.85))"
+                        : "rgba(15,23,42,.9)",
+                      border: p.has_won_gift
+                        ? "2px solid rgba(74,222,128,.9)"
+                        : "1px solid rgba(148,163,184,.4)",
+                      boxShadow: p.has_won_gift
+                        ? "0 0 30px rgba(74,222,128,.45)"
+                        : "0 0 18px rgba(15,23,42,.8)",
+                      textAlign: "center" as const,
+                    }}
+                  >
+                    <div style={{ fontSize: "2.5rem", marginBottom: "8px" }}>
+                      {p.has_won_gift ? "🏆" : "🎮"}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "1.2rem",
+                        fontWeight: 600,
+                        color: "var(--text)",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      {(p.profiles as any)?.pseudo}
+                    </div>
+                    {p.has_won_gift && (
+                      <div
+                        style={{
+                          fontFamily: "var(--mono)",
+                          fontSize: ".75rem",
+                          color: "#bbf7d0",
+                          letterSpacing: ".12em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        A déjà gagné un cadeau
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
-  // Mini-jeu en cours
+  // Playing
   if (currentRoom.status === "playing" && question) {
+    const totalAnswers = answers.length;
+
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-900 via-zinc-900 to-orange-900 text-white p-10">
-        <div className="max-w-7xl mx-auto">
-          {/* Timer */}
-          <div className="text-center mb-8">
-            <div className="text-8xl font-bold animate-pulse">
-              {timeLeft !== null && timeLeft > 0 ? timeLeft : "⏰"}
-            </div>
-          </div>
-
-          {/* Question */}
-          <div className="bg-zinc-800 rounded-3xl p-12 mb-8 shadow-2xl">
-            <h2 className="text-5xl font-bold text-center mb-8">
-              {question.question}
-            </h2>
-
-            <div className="grid grid-cols-2 gap-6">
-              {question.answers.map((answer, index) => (
-                <div
-                  key={index}
-                  className="bg-zinc-700 p-8 rounded-xl text-center"
-                >
-                  <p className="text-3xl font-semibold">{answer}</p>
+      <>
+        <Particles />
+        <div style={screenWrapperStyle}>
+          <div style={innerShellStyle}>
+            <div className="fade-in-up" style={{ ...headerBarStyle, animationDelay: ".1s" }}>
+              <div>
+                <div className="hud-title" style={{ marginBottom: "6px" }}>
+                  L&apos;ARÈNE // QUESTION EN COURS
                 </div>
-              ))}
-            </div>
-          </div>
+                <div style={smallHudLabel}>Les joueurs répondent en temps réel</div>
+              </div>
 
-          {/* Compteur de réponses */}
-          <div className="text-center">
-            <p className="text-3xl text-zinc-400">
-              {answers.length} réponse{answers.length > 1 ? "s" : ""} reçue
-              {answers.length > 1 ? "s" : ""}
-            </p>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "16px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "80px",
+                    height: "80px",
+                    borderRadius: "999px",
+                    border: "3px solid rgba(125,211,252,.7)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 0 35px rgba(56,189,248,.5)",
+                    fontSize: "2rem",
+                    fontWeight: 700,
+                    color: "var(--primary)",
+                  }}
+                >
+                  {timeLeft !== null && timeLeft > 0 ? timeLeft : "0"}
+                </div>
+                <div style={{ textAlign: "right" as const }}>
+                  <div style={smallHudLabel}>Temps restant</div>
+                  <div
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: ".9rem",
+                      color: "var(--muted)",
+                    }}
+                  >
+                    Répondre le plus vite possible !
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="cyberpunk-panel fade-in-up"
+              style={{ animationDelay: ".2s", padding: "var(--spacing-xl)" }}
+            >
+              <div
+                style={{
+                  fontSize: "2rem",
+                  fontWeight: 700,
+                  color: "var(--text)",
+                  textAlign: "center" as const,
+                  marginBottom: "var(--spacing-xl)",
+                  textShadow: "0 0 22px rgba(148,163,184,.4)",
+                }}
+              >
+                {question.question}
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                  gap: "var(--spacing-lg)",
+                }}
+              >
+                {question.answers.map((answer, index) => (
+                  <div
+                    key={index}
+                    className="fade-in-up"
+                    style={{
+                      animationDelay: `${0.3 + index * 0.05}s`,
+                      padding: "var(--spacing-lg)",
+                      borderRadius: "18px",
+                      background: "rgba(15,23,42,.95)",
+                      border: "1px solid rgba(148,163,184,.5)",
+                      boxShadow: "0 0 26px rgba(15,23,42,.9)",
+                      textAlign: "center" as const,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "1.4rem",
+                        fontWeight: 600,
+                        color: "var(--text)",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      {answer}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div
+                style={{
+                  marginTop: "var(--spacing-xl)",
+                  textAlign: "center" as const,
+                  fontFamily: "var(--mono)",
+                  fontSize: ".95rem",
+                  color: "var(--muted)",
+                  letterSpacing: ".12em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Réponses reçues :{" "}
+                <span style={{ color: "var(--primary)", fontWeight: 600 }}>
+                  {totalAnswers}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
-  // Résultats
+  // Results
   if (currentRoom.status === "results") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-900 via-zinc-900 to-emerald-900 text-white p-10">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-8xl font-bold mb-12 animate-bounce">
-            🎉 RÉSULTATS
-          </h1>
+      <>
+        <Particles />
+        <div style={screenWrapperStyle}>
+          <div style={innerShellStyle}>
+            <div className="fade-in-up" style={{ ...headerBarStyle, animationDelay: ".1s" }}>
+              <div>
+                <div className="hud-title" style={{ marginBottom: "6px" }}>
+                  L&apos;ARÈNE // RÉSULTATS
+                </div>
+                <div style={smallHudLabel}>Détermination du vainqueur</div>
+              </div>
+            </div>
 
-          {winnerPseudo ? (
-            <>
-              <div className="text-9xl mb-8">🏆</div>
-              <h2 className="text-7xl font-bold mb-4">Félicitations !</h2>
-              <p className="text-6xl text-green-400 font-bold">
-                {winnerPseudo}
-              </p>
-              <p className="text-3xl text-zinc-400 mt-8">
-                a remporté le cadeau ! 🎁
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="text-9xl mb-8">❌</div>
-              <h2 className="text-5xl font-bold mb-4">
-                Personne n'a trouvé la bonne réponse
-              </h2>
-              <p className="text-3xl text-zinc-400 mt-8">
-                On passe au prochain cadeau !
-              </p>
-            </>
-          )}
+            <div
+              className="cyberpunk-panel fade-in-up"
+              style={{
+                animationDelay: ".2s",
+                padding: "var(--spacing-xxl)",
+                textAlign: "center",
+              }}
+            >
+              {winnerPseudo ? (
+                <>
+                  <div style={{ fontSize: "5rem", marginBottom: "var(--spacing-md)" }}>🏆</div>
+                  <div
+                    style={{
+                      fontSize: "2.5rem",
+                      fontWeight: 700,
+                      color: "var(--text)",
+                      marginBottom: "var(--spacing-sm)",
+                      textShadow: "0 0 26px rgba(74,222,128,.6)",
+                    }}
+                  >
+                    Félicitations !
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "2.2rem",
+                      fontWeight: 700,
+                      color: "var(--success)",
+                      marginBottom: "var(--spacing-md)",
+                    }}
+                  >
+                    {winnerPseudo}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: ".95rem",
+                      color: "var(--muted)",
+                      letterSpacing: ".12em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    remporte le cadeau 🎁
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: "5rem", marginBottom: "var(--spacing-md)" }}>❌</div>
+                  <div
+                    style={{
+                      fontSize: "2.2rem",
+                      fontWeight: 700,
+                      color: "var(--text)",
+                      marginBottom: "var(--spacing-sm)",
+                    }}
+                  >
+                    Personne n&apos;a trouvé la bonne réponse...
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: ".95rem",
+                      color: "var(--muted)",
+                      letterSpacing: ".12em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    On passe au prochain cadeau !
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 

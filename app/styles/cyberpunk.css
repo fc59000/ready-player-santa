@@ -293,7 +293,7 @@ body::after {
   text-decoration: none;
   display: inline-block;
   position: relative;
-  overflow: visible; /* IMPORTANT: changer de hidden à visible */
+  overflow: hidden; /* ✅ RETOUR à hidden pour cacher le débordement */
 }
 
 .cyberpunk-btn::before {
@@ -320,7 +320,9 @@ body::after {
     rgba(255, 255, 255, 0.15),
     transparent
   );
-  transition: left 0.6s ease-out;
+  transition: left 0.6s ease-out, opacity 0.6s ease-out;
+  z-index: 0;
+  opacity: 0;
   pointer-events: none;
 }
 
@@ -336,6 +338,7 @@ body::after {
 }
 
 .cyberpunk-btn:hover::after {
+  opacity: 1;
   left: 150%;
 }
 

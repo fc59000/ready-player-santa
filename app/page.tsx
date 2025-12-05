@@ -1,4 +1,4 @@
-/** READY PLAYER SANTA™ – PAGE ACCUEIL ULTIMATE AAA **/
+/** READY PLAYER SANTA™ – PAGE ACCUEIL ULTRA-PREMIUM **/
 "use client";
 
 import { useState, useEffect } from "react";
@@ -11,6 +11,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
   const [shellVisible, setShellVisible] = useState(false);
+  const [titleClicks, setTitleClicks] = useState(0);
+  const [showSnowBurst, setShowSnowBurst] = useState(false);
 
   // Typing title
   function typeTitle() {
@@ -25,6 +27,21 @@ export default function HomePage() {
       i++;
       if (i >= text.length) clearInterval(interval);
     }, 55);
+  }
+
+  // Easter egg: Triple click on title
+  function handleTitleClick() {
+    setTitleClicks((prev) => prev + 1);
+    
+    if (titleClicks === 2) {
+      // 3ème clic = Snow burst!
+      setShowSnowBurst(true);
+      setTimeout(() => setShowSnowBurst(false), 2000);
+      setTitleClicks(0);
+    }
+    
+    // Reset counter après 1 seconde
+    setTimeout(() => setTitleClicks(0), 1000);
   }
 
   /** Simulated Loading **/
@@ -51,6 +68,36 @@ export default function HomePage() {
   return (
     <>
       <Particles />
+
+      {/* Snow Burst Easter Egg */}
+      {showSnowBurst && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            pointerEvents: "none",
+            animation: "snowBurst 2s ease-out forwards",
+          }}
+        >
+          {[...Array(50)].map((_, i) => (
+            <div
+              key={i}
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                width: "10px",
+                height: "10px",
+                background: "white",
+                borderRadius: "50%",
+                animation: `snowParticle${i % 8} 2s ease-out forwards`,
+                opacity: 0,
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* ====================== LOADING SCREEN ====================== */}
       {loading && (
@@ -80,7 +127,15 @@ export default function HomePage() {
               overflow: "hidden",
             }}
           >
-            <div className="hud-title" style={{ marginBottom: "var(--spacing-md)" }}>
+            <div style={{ 
+              fontFamily: "var(--mono)", 
+              fontSize: "0.75rem", 
+              letterSpacing: "0.25em", 
+              textTransform: "uppercase", 
+              color: "var(--primary)", 
+              fontWeight: 700,
+              marginBottom: "var(--spacing-md)" 
+            }}>
               INITIALISATION EN COURS
             </div>
 
@@ -189,61 +244,138 @@ export default function HomePage() {
       >
         <div className="cyberpunk-panel" style={{ marginBottom: "var(--spacing-xl)" }}>
           <div style={{ textAlign: "center" }}>
-            <div className="hud-title fade-in-up" style={{ animationDelay: ".4s" }}>
+            <div style={{ 
+              fontFamily: "var(--mono)", 
+              fontSize: "0.75rem", 
+              letterSpacing: "0.25em", 
+              textTransform: "uppercase", 
+              color: "var(--primary)", 
+              fontWeight: 700,
+              opacity: 0,
+              animation: "fadeInUp 0.6s ease-out 0.4s forwards"
+            }}>
               PROTOCOLE SANTA // DRCI
             </div>
 
             <h1
               id="main-title"
-              className="main-title fade-in-up"
+              onClick={handleTitleClick}
               style={{
-                animationDelay: ".5s",
-                opacity: 0,
+                fontSize: "2.8rem",
+                fontWeight: 900,
+                background: "linear-gradient(135deg, var(--primary), #38bdf8)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                textShadow: "0 0 60px rgba(125,211,252,0.4)",
+                animation: "fadeInUp 0.6s ease-out 0.5s backwards, titleGlow 3s ease-in-out infinite",
                 marginBottom: 6,
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "scale(1.02)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1)";
               }}
             >
               READY PLAYER SANTA™
             </h1>
 
-            <div className="sub fade-in-up" style={{ animationDelay: ".6s", marginBottom: "40px" }}>
+            <div style={{
+              fontFamily: "var(--mono)",
+              fontSize: "0.8rem",
+              letterSpacing: "0.2em",
+              color: "var(--muted)",
+              textTransform: "uppercase",
+              marginBottom: "40px",
+              opacity: 0,
+              animation: "fadeInUp 0.6s ease-out 0.6s forwards"
+            }}>
               SYSTÈME INITIALISÉ – ACCÈS AUTORISÉ
             </div>
 
             <div
-              className="fade-in-up"
               style={{
                 animationDelay: ".8s",
                 fontSize: "1rem",
                 lineHeight: "1.75",
                 whiteSpace: "pre-wrap",
                 marginBottom: "48px",
+                opacity: 0,
+                animation: "fadeInUp 0.6s ease-out 0.8s forwards"
               }}
             >
               {`Bienvenue dans le protocole S.A.N.T.A.
 
 Les festivités approchent.
 Les systèmes s'éveillent.
-Deux modules sont actuellement disponibles.
+Trois modules sont actuellement disponibles.
 
 Je vous accompagne.
 – Santa`}
             </div>
 
             <div
-              className="fade-in-up"
               style={{
                 animationDelay: "1s",
                 display: "flex",
                 flexDirection: "column",
                 gap: "18px",
+                opacity: 0,
+                animation: "fadeInUp 0.6s ease-out 1s forwards"
               }}
             >
-              <button onClick={() => router.push("/mission1")} className="cyberpunk-btn">
+              <button 
+                onClick={() => router.push("/mission1")} 
+                className="cyberpunk-btn"
+                style={{ transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-4px)";
+                  e.currentTarget.style.boxShadow = "0 12px 30px rgba(125,211,252,.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 8px 24px rgba(125,211,252,.25)";
+                }}
+              >
                 MISSION 1 – ACTIVATION
               </button>
 
-              <button onClick={() => router.push("/briefing")} className="cyberpunk-btn" style={{ position: "relative" }}>
+              <button 
+                onClick={() => router.push("/briefing")} 
+                className="cyberpunk-btn"
+                style={{ transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-4px)";
+                  e.currentTarget.style.boxShadow = "0 12px 30px rgba(125,211,252,.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 8px 24px rgba(125,211,252,.25)";
+                }}
+              >
                 BRIEFING – COMPRENDRE LE JEU
+              </button>
+
+              <button 
+                onClick={() => router.push("/rules")} 
+                className="cyberpunk-btn" 
+                style={{ 
+                  position: "relative",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-4px)";
+                  e.currentTarget.style.boxShadow = "0 12px 30px rgba(125,211,252,.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 8px 24px rgba(125,211,252,.25)";
+                }}
+              >
+                RÈGLES DU JEU
                 <span
                   style={{
                     position: "absolute",
@@ -255,7 +387,7 @@ Je vous accompagne.
                     padding: "3px 8px",
                     borderRadius: "6px",
                     fontWeight: 700,
-                    animation: "badgePulse 2s ease-in-out infinite",
+                    animation: "badgePulse 2s ease-in-out infinite, breathe 3s ease-in-out infinite",
                     boxShadow: "0 0 16px rgba(249, 115, 115, .6)",
                   }}
                 >
@@ -265,13 +397,14 @@ Je vous accompagne.
             </div>
 
             <div
-              className="footer fade-in-up"
               style={{
                 animationDelay: "1.2s",
                 marginTop: "34px",
                 fontFamily: "var(--mono)",
                 letterSpacing: ".22em",
                 color: "var(--muted-dark)",
+                opacity: 0,
+                animation: "fadeInUp 0.6s ease-out 1.2s forwards"
               }}
             >
               <span style={{ color: "var(--primary)", display: "block", marginBottom: 6 }}>
@@ -282,32 +415,39 @@ Je vous accompagne.
           </div>
         </div>
 
-        {/* ========== AUTH PANEL (ACTIVÉ) ========== */}
-        <div className="fade-in-up" style={{ animationDelay: ".4s", marginBottom: "var(--spacing-xl)" }}>
+        {/* ========== AUTH PANEL (DÉSACTIVÉ) ========== */}
+        <div style={{ opacity: 0, animation: "fadeInUp 0.6s ease-out 0.4s forwards", marginBottom: "var(--spacing-xl)" }}>
           <div
             style={{
               padding: "var(--spacing-xl) var(--spacing-lg)",
               borderRadius: "18px",
-              border: "1px solid rgba(148,163,184,.4)",
-              background:
-                "radial-gradient(circle at 50% 0%, rgba(125,211,252,.07), transparent 65%), rgba(15,23,42,.74)",
-              boxShadow: "0 0 30px rgba(15,23,42,.8), inset 0 1px 0 rgba(255,255,255,.05)",
+              border: "1px solid rgba(148,163,184,.2)",
+              background: "rgba(15,23,42,.4)",
+              boxShadow: "0 0 20px rgba(15,23,42,.6), inset 0 1px 0 rgba(255,255,255,.02)",
               textAlign: "center",
             }}
           >
-            <div style={{ fontFamily: "var(--mono)", fontSize: ".85rem", letterSpacing: ".18em", marginBottom: "var(--spacing-lg)" }}>
-              PRÊT À PARTICIPER AU READY PLAYER SANTA™ ?
+            <div style={{ fontFamily: "var(--mono)", fontSize: ".85rem", letterSpacing: ".18em", marginBottom: "var(--spacing-lg)", color: "var(--muted)" }}>
+              ACCÈS JOUEUR
             </div>
 
             <div style={{ display: "flex", gap: "var(--spacing-md)", justifyContent: "center", flexWrap: "wrap" }}>
               <button
-                onClick={() => router.push("/login")}
-                className="cyberpunk-btn"
+                disabled
                 style={{
+                  fontFamily: "var(--mono)",
+                  fontSize: ".8rem",
+                  letterSpacing: ".18em",
                   padding: "14px 28px",
+                  borderRadius: "12px",
+                  color: "var(--muted-dark)",
+                  background: "rgba(63,63,70,.3)",
+                  border: "2px solid rgba(82,82,91,.3)",
+                  cursor: "not-allowed",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "10px",
+                  opacity: 0.5,
                 }}
               >
                 <span>▸</span>
@@ -315,21 +455,21 @@ Je vous accompagne.
               </button>
               
               <button
-                onClick={() => router.push("/login")}
+                disabled
                 style={{
                   fontFamily: "var(--mono)",
                   fontSize: ".8rem",
                   letterSpacing: ".18em",
                   padding: "14px 28px",
                   borderRadius: "12px",
-                  color: "var(--muted)",
+                  color: "var(--muted-dark)",
                   background: "transparent",
-                  border: "1px solid rgba(148,163,184,.3)",
-                  cursor: "pointer",
-                  transition: "all var(--transition-fast)",
+                  border: "1px solid rgba(82,82,91,.3)",
+                  cursor: "not-allowed",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "10px",
+                  opacity: 0.5,
                 }}
               >
                 <span>+</span>
@@ -342,19 +482,49 @@ Je vous accompagne.
                 marginTop: "var(--spacing-md)",
                 fontFamily: "var(--mono)",
                 fontSize: ".75rem",
-                color: "var(--success)",
-                textShadow: "0 0 12px rgba(34,197,94,.4)",
+                color: "var(--primary)",
+                textShadow: "0 0 12px rgba(125,211,252,.3)",
+                animation: "pulse 2s ease-in-out infinite",
               }}
             >
-              🎄 INSCRIPTIONS OUVERTES !
+              🔒 OUVERTURE DÉBUT DE SEMAINE PROCHAINE
             </div>
           </div>
         </div>
 
-        <div className="fade-in-up" style={{ animationDelay: ".2s" }}>
+        <div style={{ opacity: 0, animation: "fadeInUp 0.6s ease-out 0.2s forwards" }}>
           <CountdownTimer />
         </div>
       </div>
+
+      {/* Custom Animations */}
+      <style jsx>{`
+        @keyframes breathe {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+        }
+
+        @keyframes snowBurst {
+          0% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+
+        ${[...Array(8)].map((_, i) => `
+          @keyframes snowParticle${i} {
+            0% {
+              opacity: 1;
+              transform: translate(0, 0) scale(1);
+            }
+            100% {
+              opacity: 0;
+              transform: translate(
+                ${(Math.random() - 0.5) * 800}px,
+                ${(Math.random() - 0.5) * 800}px
+              ) scale(0);
+            }
+          }
+        `).join('')}
+      `}</style>
     </>
   );
 }

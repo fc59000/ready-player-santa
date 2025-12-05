@@ -1,6 +1,7 @@
+/** READY PLAYER SANTA™ – BRIEFING AAA HARMONIZED **/
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Particles from "@/components/Particles";
 
@@ -9,60 +10,59 @@ export default function BriefingPage() {
   const [loading, setLoading] = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
   const [shellVisible, setShellVisible] = useState(false);
-  const [story, setStory] = useState("");
-  const [finished, setFinished] = useState(false);
+  const [storyText, setStoryText] = useState("");
+  const [showContinue, setShowContinue] = useState(false);
+  const [isTyping, setIsTyping] = useState(true);
+  const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // --- Texte complet du briefing ---
-  const fullStory = [
-    "> S.A.N.T.A PROTOCOL v1.1",
-    "> Domaine : DRCI_GHICL",
-    "> Statut : ACTIVÉ",
-    "",
-    "DRCI,",
-    "",
-    "C'est encore moi… Santa.",
-    "",
-    "Laissez-moi vous révéler un secret.",
-    "Le protocole que vous avez reçu",
-    "est inspiré d'un film de Steven Spielberg :",
-    "Ready Player One.",
-    "",
-    "Dans ce film, chacun entre dans un monde numérique",
-    "où l'on choisit un avatar",
-    "et où les joueurs accomplissent de petites quêtes",
-    "pour avancer et s'amuser.",
-    "",
-    "C'est exactement ce que je vous prépare.",
-    "Vous aurez un avatar.",
-    "Vous découvrirez quelques mini-défis.",
-    "Rien de difficile : quelques clics, quelques choix.",
-    "Juste assez de jeu pour vous faire sourire.",
-    "",
-    "Et pourquoi tout cela ?",
-    "Pour distribuer les cadeaux autrement.",
-    "Pas au hasard.",
-    "Pas en piochant un nom.",
-    "",
-    "Cette année, ce seront vos actions qui décideront.",
-    "Vous jouerez pour échanger les cadeaux.",
-    "Pour tenter d'en décrocher un qui vous plaît vraiment.",
-    "Ou pour défendre celui que vous convoitez.",
-    "",
-    "Pas d'inquiétude :",
-    "c'est accessible,",
-    "léger,",
-    "et parfaitement guidé.",
-    "",
-    "Votre seule mission actuelle :",
-    "trouver un cadeau qui mérite d'être désiré.",
-    "",
-    "Le reste, je m'en occupe.",
-    "",
-    "— Santa",
-    "READY PLAYER SANTA™"
-  ].join("\n");
+  const fullStory = `> S.A.N.T.A PROTOCOL v1.1
+> Domaine : DRCI_GHICL
+> Statut : ACTIVÉ
 
-  // --- Loading Screen progression ---
+DRCI,
+
+C'est encore moi… Santa.
+
+Laissez-moi vous révéler un secret.
+Le protocole que vous avez reçu
+est inspiré d'un film de Steven Spielberg :
+Ready Player One.
+
+Dans ce film, chacun entre dans un monde numérique
+où l'on choisit un avatar
+et où les joueurs accomplissent de petites quêtes
+pour avancer et s'amuser.
+
+C'est exactement ce que je vous prépare.
+Vous aurez un avatar.
+Vous découvrirez quelques mini-défis.
+Rien de difficile : quelques clics, quelques choix.
+Juste assez de jeu pour vous faire sourire.
+
+Et pourquoi tout cela ?
+Pour distribuer les cadeaux autrement.
+Pas au hasard.
+Pas en piochant un nom.
+
+Cette année, ce seront vos actions qui décideront.
+Vous jouerez pour échanger les cadeaux.
+Pour tenter d'en décrocher un qui vous plaît vraiment.
+Ou pour défendre celui que vous convoitez.
+
+Pas d'inquiétude :
+c'est accessible,
+léger,
+et parfaitement guidé.
+
+Votre seule mission actuelle :
+trouver un cadeau qui mérite d'être désiré.
+
+Le reste, je m'en occupe.
+
+— Santa
+READY PLAYER SANTA™`;
+
+  // Loading screen
   useEffect(() => {
     const interval = setInterval(() => {
       setLoadProgress((prev) => {
@@ -81,378 +81,310 @@ export default function BriefingPage() {
         setLoading(false);
         setTimeout(() => {
           setShellVisible(true);
-          setTimeout(() => startTyping(), 400);
+          setTimeout(() => {
+            startTyping();
+          }, 400);
         }, 650);
       }, 400);
     }
   }, [loadProgress]);
 
-  // --- Typewriter ---
+  // Typing effect
   function startTyping() {
     let index = 0;
     const interval = setInterval(() => {
       if (index <= fullStory.length) {
-        setStory(fullStory.substring(0, index));
+        setStoryText(fullStory.substring(0, index));
         index++;
       } else {
         clearInterval(interval);
-        setFinished(true);
+        setIsTyping(false);
+        setTimeout(() => setShowContinue(true), 500);
       }
     }, 20);
+    typingIntervalRef.current = interval;
   }
 
-  function skipAll() {
-    setStory(fullStory);
-    setFinished(true);
+  // Skip typing
+  function skipTyping() {
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
+    }
+    setStoryText(fullStory);
+    setIsTyping(false);
+    setShowContinue(true);
   }
 
   return (
     <>
       <Particles />
 
-      {/* █████ LOADING SCREEN █████ */}
+      {/* Loading Screen */}
       {loading && (
-        <div className="loading-screen">
-          <div className="loading-inner">
-            <div className="loading-title">INITIALISATION EN COURS</div>
-            <div className="loading-logo">READY PLAYER SANTA™ // PROTOCOLE DRCI</div>
-
-            <div className="loading-main">
-              Chargement du <span>protocole Santa</span>…<br />
-              Mise en ligne du Briefing.
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{
+            background: "radial-gradient(circle at top, var(--bg-dark) 0%, var(--bg-deep) 70%)",
+            opacity: loadProgress >= 100 ? 0 : 1,
+            transition: "opacity 0.6s ease-out",
+            pointerEvents: loadProgress >= 100 ? "none" : "auto",
+          }}
+        >
+          <div
+            style={{
+              textAlign: "center",
+              maxWidth: "460px",
+              padding: "var(--spacing-xl) var(--spacing-lg)",
+              borderRadius: "20px",
+              border: "1px solid rgba(148, 163, 184, 0.5)",
+              background:
+                "radial-gradient(circle at top, var(--primary-glow), transparent 65%), radial-gradient(circle at bottom, var(--panel-overlay), rgba(2, 6, 23, 0.98))",
+              boxShadow:
+                "0 0 40px rgba(15, 23, 42, 0.95), 0 0 60px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+            }}
+          >
+            <div style={{ 
+              fontFamily: "var(--mono)", 
+              fontSize: "0.75rem", 
+              letterSpacing: "0.25em", 
+              textTransform: "uppercase", 
+              color: "var(--primary)", 
+              fontWeight: 700,
+              marginBottom: "var(--spacing-md)" 
+            }}>
+              INITIALISATION EN COURS
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--mono)",
+                fontSize: "0.8rem",
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: "var(--primary)",
+                marginBottom: "var(--spacing-lg)",
+                textShadow: "0 0 20px var(--primary-glow)",
+              }}
+            >
+              BRIEFING // COMPRENDRE LE JEU
             </div>
 
-            <div className="boot-sequence">
-              <div className="boot-line">› Déchiffrement données...</div>
-              <div className="boot-line">› Vérification sécurité...</div>
-              <div className="boot-line">› Module briefing prêt...</div>
+            <div style={{ marginTop: "var(--spacing-md)", textAlign: "left", fontFamily: "var(--mono)", fontSize: "0.7rem", color: "var(--muted-dark)", maxWidth: "320px", margin: "var(--spacing-md) auto 0" }}>
+              <div style={{ marginBottom: "6px", opacity: 0, animation: "bootLine 0.4s ease-out 0.3s forwards" }}>
+                › Initialisation protocole...
+              </div>
+              <div style={{ marginBottom: "6px", opacity: 0, animation: "bootLine 0.4s ease-out 0.6s forwards" }}>
+                › Connexion serveur SANTA...
+              </div>
+              <div style={{ marginBottom: "6px", opacity: 0, animation: "bootLine 0.4s ease-out 0.9s forwards" }}>
+                › Chargement briefing...
+              </div>
             </div>
 
-            <div className="loading-bar">
-              <div className="loading-bar-fill" style={{ width: `${loadProgress}%` }} />
+            <div
+              style={{
+                width: "100%",
+                height: "8px",
+                background: "rgba(15, 23, 42, 0.9)",
+                borderRadius: "999px",
+                overflow: "hidden",
+                marginTop: "var(--spacing-lg)",
+                marginBottom: "var(--spacing-sm)",
+                boxShadow: "0 0 0 1px rgba(148, 163, 184, 0.4), inset 0 2px 4px rgba(0, 0, 0, 0.5)",
+              }}
+            >
+              <div
+                style={{
+                  width: `${loadProgress}%`,
+                  height: "100%",
+                  background: "linear-gradient(90deg, var(--primary), #38bdf8, var(--success))",
+                  borderRadius: "inherit",
+                  boxShadow: "0 0 20px rgba(56, 189, 248, 0.9)",
+                  transition: "width 0.15s linear",
+                }}
+              />
             </div>
 
-            <div className="loading-percent">{loadProgress}%</div>
-
-            <div className="loading-hint">Conseil : gardez simplement votre cadeau en tête.</div>
+            <div
+              style={{
+                fontFamily: "var(--mono)",
+                fontSize: "0.82rem",
+                color: "var(--muted)",
+                letterSpacing: "0.1em",
+              }}
+            >
+              {loadProgress}%
+            </div>
           </div>
         </div>
       )}
 
-      {/* █████ MAIN CONTENT █████ */}
-      <main className={`shell ${shellVisible ? "visible" : ""}`}>
-        <section className="panel">
-          <div className="panel-inner">
+      {/* Main Content */}
+      <div
+        style={{
+          maxWidth: "900px",
+          margin: "60px auto 80px",
+          padding: "0 var(--spacing-lg)",
+          opacity: shellVisible ? 1 : 0,
+          transform: shellVisible ? "translateY(0)" : "translateY(20px)",
+          transition: "opacity 0.7s ease-out, transform 0.7s ease-out",
+          position: "relative",
+          zIndex: 2,
+        }}
+      >
+        <div className="cyberpunk-panel">
+          <div style={{ position: "relative", zIndex: 1 }}>
             {/* Header */}
-            <header className="hud-header">
-              <div className="hud-pill">
-                <span className="hud-dot" />
-                <span>TRANSMISSION SÉCURISÉE – SANTA</span>
+            <div style={{ opacity: 0, animation: "fadeInUp 0.6s ease-out 0.2s forwards", marginBottom: "var(--spacing-md)" }}>
+              <div style={{ 
+                fontFamily: "var(--mono)", 
+                fontSize: "0.75rem", 
+                letterSpacing: "0.25em", 
+                textTransform: "uppercase", 
+                color: "var(--primary)", 
+                fontWeight: 700,
+                marginBottom: "var(--spacing-xs)" 
+              }}>
+                📡 TRANSMISSION SÉCURISÉE - SANTA
               </div>
-              <div>DRCI · GHICL · 11.12.25</div>
-            </header>
-
-            <div className="title">
-              <div className="title-main">READY PLAYER SANTA™</div>
-                          </div>
-
-            <div className="separator" />
-
-            {/* STORY TEXT */}
-            <div className="story">
-              <span>{story}</span>
-              {!finished && <span className="cursor" />}
+              <h1 style={{
+                fontSize: "2.8rem",
+                fontWeight: 900,
+                background: "linear-gradient(135deg, var(--primary), #38bdf8)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                textShadow: "0 0 60px rgba(125,211,252,0.4)",
+                marginBottom: "var(--spacing-xs)"
+              }}>
+                READY PLAYER SANTA™
+              </h1>
+              <p style={{ fontSize: "0.9rem", color: "var(--muted)" }}>
+                Briefing · Comprendre le jeu
+              </p>
             </div>
 
-            {/* AFTER-STORY */}
-            {finished && (
-              <>
-                <div className="tagline">
-                  Le jeu qui transforme le Secret Santa…  
-                  pour que chaque cadeau devienne une quête.
-                </div>
+            <div
+              style={{
+                opacity: 0,
+                animation: "fadeInUp 0.6s ease-out 0.4s forwards",
+                height: "1px",
+                background: "linear-gradient(to right, transparent, var(--primary), transparent)",
+                marginBottom: "var(--spacing-lg)",
+              }}
+            />
 
-                <div className="footer">
-                  <div className="footer-main">READY PLAYER SANTA™</div>
-                  <div className="footer-sub">NO THEME · ONLY PLAY</div>
-                </div>
-              </>
-            )}
-
-            {/* CONTROLS */}
-            <div className="controls">
-              <button
-                className="btn-skip nav-link"
-                onClick={() => router.push("/")}
-              >
-                ⟵ PROTOCOLE S.A.N.T.A
-              </button>
-
-              {!finished && (
-                <button className="btn-skip" onClick={skipAll}>
-                  ⏩ AFFICHER TOUT
-                </button>
+            {/* Story */}
+            <div
+              style={{
+                opacity: 0,
+                animation: "fadeInUp 0.6s ease-out 0.6s forwards",
+                fontFamily: "var(--mono)",
+                fontSize: "0.9rem",
+                color: "var(--text)",
+                whiteSpace: "pre-wrap",
+                lineHeight: "1.7",
+                marginBottom: "var(--spacing-lg)",
+              }}
+            >
+              {storyText}
+              {isTyping && (
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: "2px",
+                    height: "1rem",
+                    background: "var(--primary)",
+                    marginLeft: "4px",
+                    animation: "pulse 1s ease-in-out infinite",
+                  }}
+                />
               )}
             </div>
+
+            {/* Skip Button */}
+            {isTyping && (
+              <div style={{ textAlign: "center", marginBottom: "var(--spacing-lg)", animation: "fadeInUp 0.6s ease-out" }}>
+                <button
+                  onClick={skipTyping}
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: "0.75rem",
+                    letterSpacing: "0.15em",
+                    padding: "10px 24px",
+                    borderRadius: "8px",
+                    background: "rgba(148,163,184,.08)",
+                    border: "1px solid rgba(148,163,184,.25)",
+                    color: "var(--muted)",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(148,163,184,.15)";
+                    e.currentTarget.style.borderColor = "var(--muted)";
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(148,163,184,.08)";
+                    e.currentTarget.style.borderColor = "rgba(148,163,184,.25)";
+                    e.currentTarget.style.transform = "translateY(0)";
+                  }}
+                >
+                  ⏭️ SKIP
+                </button>
+              </div>
+            )}
+
+            {/* Info Box */}
+            {showContinue && (
+              <div
+                style={{
+                  background: "rgba(15, 23, 42, 0.8)",
+                  border: "1px solid rgba(125, 211, 252, 0.3)",
+                  borderRadius: "12px",
+                  padding: "var(--spacing-lg)",
+                  marginTop: "var(--spacing-lg)",
+                  animation: "fadeInUp 0.6s ease-out",
+                  textAlign: "center",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: "0.85rem",
+                    color: "var(--muted)",
+                    fontStyle: "italic",
+                  }}
+                >
+                  Le jeu qui transforme le Secret Santa… pour que chaque cadeau devienne une quête.
+                </p>
+              </div>
+            )}
+
+            {/* Bouton retour */}
+            {showContinue && (
+              <div style={{ textAlign: "center", marginTop: "var(--spacing-xl)" }}>
+                <button
+                  onClick={() => router.push("/")}
+                  className="cyberpunk-btn"
+                  style={{ 
+                    animation: "fadeInUp 0.6s ease-out 0.3s backwards",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-4px)";
+                    e.currentTarget.style.boxShadow = "0 12px 30px rgba(125,211,252,.4)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 8px 24px rgba(125,211,252,.25)";
+                  }}
+                >
+                  ← RETOUR À L'ACCUEIL
+                </button>
+              </div>
+            )}
           </div>
-        </section>
-      </main>
-
-      {/* █████ STYLES (global) █████ */}
-      <style jsx global>{`
-        /* --- TOUT ton CSS PREMIUM ici --- */
-        
-        body {
-          font-family: var(--sans);
-          background: radial-gradient(circle at top, var(--bg-mid) 0%, var(--bg-dark) 55%, var(--bg-deep) 100%);
-          color: var(--text);
-          min-height: 100vh;
-          overflow-x: hidden;
-        }
-
-        :root {
-          --bg-deep: #000000;
-          --bg-dark: #020617;
-          --bg-mid: #0f172a;
-          --panel-overlay: rgba(15,23,42,0.97);
-          --primary: #7dd3fc;
-          --primary-glow: rgba(125,211,252,0.4);
-          --accent: #f97373;
-          --success: #22c55e;
-          --text: #e5f3ff;
-          --muted: #94a3b8;
-          --muted-dark: #64748b;
-          --mono: "JetBrains Mono", Menlo, monospace;
-        }
-
-        /* --- Scanlines --- */
-        body::before {
-          content:"";
-          position:fixed;
-          inset:0;
-          pointer-events:none;
-          background:repeating-linear-gradient(
-            to bottom,
-            rgba(255,255,255,0.02) 0,
-            rgba(255,255,255,0.02) 1px,
-            transparent 2px,
-            transparent 4px
-          );
-          opacity:.7;
-        }
-
-        /* --- Neige HUD --- */
-        body::after {
-          content:"";
-          position:fixed;
-          top:-150%;
-          left:-150%;
-          width:400%;
-          height:400%;
-          pointer-events:none;
-          background-image:
-            radial-gradient(circle, rgba(148,163,184,0.35) 0, transparent 50%),
-            radial-gradient(circle, rgba(148,163,184,0.25) 0, transparent 50%),
-            radial-gradient(circle, rgba(148,163,184,0.2) 0, transparent 50%);
-          background-size:180px 180px, 280px 280px, 360px 360px;
-          opacity:.14;
-          animation:snowDrift 24s linear infinite;
-        }
-
-        @keyframes snowDrift {
-          0% { transform: translate3d(0,-100px,0); }
-          100% { transform: translate3d(-50px,100px,0); }
-        }
-
-        /* --- Loading screen --- */
-        .loading-screen {
-          position:fixed;
-          inset:0;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          background:radial-gradient(circle at top,var(--bg-dark) 0%,var(--bg-deep) 70%);
-          z-index:100;
-        }
-
-        .loading-inner {
-          text-align:center;
-          padding:32px 24px;
-          max-width:460px;
-          border-radius:20px;
-          border:1px solid rgba(148,163,184,0.5);
-          background:
-            radial-gradient(circle at top, var(--primary-glow), transparent 65%),
-            radial-gradient(circle at bottom, var(--panel-overlay), rgba(2,6,23,0.98));
-        }
-
-        .loading-title {
-          font-family:var(--mono);
-          font-size:.85rem;
-          letter-spacing:.25em;
-          color:var(--muted);
-          margin-bottom:12px;
-        }
-
-        .loading-logo {
-          font-family:var(--mono);
-          font-size:.8rem;
-          letter-spacing:.22em;
-          color:var(--primary);
-          text-shadow:0 0 20px var(--primary-glow);
-          margin-bottom:24px;
-        }
-
-        .boot-line {
-          opacity:0;
-          animation:bootLine 0.4s ease-out forwards;
-        }
-        .boot-line:nth-child(1){animation-delay:.3s;}
-        .boot-line:nth-child(2){animation-delay:.6s;}
-        .boot-line:nth-child(3){animation-delay:.9s;}
-
-        @keyframes bootLine {
-          from {opacity:0; transform:translateX(-10px);}
-          to {opacity:1; transform:translateX(0);}
-        }
-
-        .loading-bar {
-          width:100%;
-          height:8px;
-          background:rgba(15,23,42,0.9);
-          border-radius:999px;
-          overflow:hidden;
-          margin:16px 0;
-        }
-
-        .loading-bar-fill {
-          height:100%;
-          background:linear-gradient(90deg,var(--primary),#38bdf8,var(--success));
-          box-shadow:0 0 20px rgba(56,189,248,0.9);
-          transition:width .15s linear;
-        }
-
-        /* --- Shell visible --- */
-        .shell {
-          opacity:0;
-          transform:translateY(20px);
-          transition:.7s ease-out;
-          max-width:920px;
-          margin:72px auto;
-          padding:0 24px 72px;
-        }
-        .shell.visible {
-          opacity:1;
-          transform:translateY(0);
-        }
-
-        /* --- Panel --- */
-        .panel {
-          border-radius:20px;
-          border:1px solid rgba(148,163,184,0.5);
-          background:
-            radial-gradient(circle at top left, rgba(125,211,252,0.08), transparent 65%),
-            linear-gradient(145deg, var(--panel-overlay), rgba(15,23,42,1));
-          position:relative;
-          overflow:hidden;
-        }
-
-        .panel-inner {
-          position:relative;
-          padding:28px 26px 26px;
-        }
-
-        .hud-header {
-          display:flex;
-          justify-content:space-between;
-          font-family:var(--mono);
-          font-size:.72rem;
-          letter-spacing:.18em;
-          color:var(--muted);
-          margin-bottom:8px;
-        }
-
-        .hud-pill {
-          padding:5px 10px;
-          border-radius:999px;
-          border:1px solid rgba(148,163,184,0.6);
-          background:rgba(15,23,42,0.86);
-          display:flex;
-          align-items:center;
-          gap:7px;
-        }
-
-        .hud-dot {
-          width:7px;
-          height:7px;
-          border-radius:50%;
-          background:radial-gradient(circle,var(--success),#15803d);
-          animation:pulse 2.5s infinite ease-in-out;
-        }
-
-        @keyframes pulse {
-          50% { transform:scale(1.1); }
-        }
-
-        .title-main {
-          font-family:var(--mono);
-          font-size:.92rem;
-          text-transform:uppercase;
-          letter-spacing:.32em;
-          color:var(--primary);
-          text-align:center;
-          margin-top:12px;
-        }
-
-        .story {
-          font-family:var(--mono);
-          font-size:.92rem;
-          line-height:1.75;
-          white-space:pre-wrap;
-          min-height:320px;
-          margin-bottom:24px;
-        }
-
-        .cursor {
-          display:inline-block;
-          width:8px;
-          height:16px;
-          background:var(--primary);
-          animation:cursorBlink 1s steps(2) infinite;
-        }
-
-        @keyframes cursorBlink {
-          0%,50% { opacity:1; }
-          51%,100% { opacity:0; }
-        }
-
-        .btn-skip {
-          font-family:var(--mono);
-          font-size:.76rem;
-          padding:7px 15px;
-          text-transform:uppercase;
-          border-radius:999px;
-          border:1px solid rgba(148,163,184,0.6);
-          background:transparent;
-          color:var(--muted);
-          cursor:pointer;
-          transition:.2s;
-        }
-
-        .btn-skip:hover {
-          color:var(--primary);
-          border-color:var(--primary);
-          box-shadow:0 0 16px rgba(56,189,248,0.55);
-        }
-
-        .controls {
-          margin-top:24px;
-          display:flex;
-          justify-content:flex-end;
-          gap:12px;
-        }
-
-      `}</style>
+        </div>
+      </div>
     </>
   );
 }

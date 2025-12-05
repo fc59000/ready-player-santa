@@ -1,6 +1,7 @@
+/** READY PLAYER SANTA™ – MISSION 1 AAA HARMONIZED **/
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Particles from "@/components/Particles";
 
@@ -10,7 +11,9 @@ export default function Mission1Page() {
   const [loadProgress, setLoadProgress] = useState(0);
   const [shellVisible, setShellVisible] = useState(false);
   const [storyText, setStoryText] = useState("");
-  const [showMission, setShowMission] = useState(false);
+  const [showContinue, setShowContinue] = useState(false);
+  const [isTyping, setIsTyping] = useState(true);
+  const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fullStory = `> S.A.N.T.A PROTOCOL v1.0
 > Domaine : DRCI_GHICL
@@ -62,19 +65,31 @@ Mais suffisamment surprenant pour rendre l'expérience… inoubliable.`;
     }
   }, [loadProgress]);
 
-  // Typing effect pour le story
-function startTyping() {
-  let index = 0;
-  const interval = setInterval(() => {
-    if (index <= fullStory.length) {
-      setStoryText(fullStory.substring(0, index));
-      index++;
-    } else {
-      clearInterval(interval);
-      setTimeout(() => setShowMission(true), 500);
+  // Typing effect
+  function startTyping() {
+    let index = 0;
+    const interval = setInterval(() => {
+      if (index <= fullStory.length) {
+        setStoryText(fullStory.substring(0, index));
+        index++;
+      } else {
+        clearInterval(interval);
+        setIsTyping(false);
+        setTimeout(() => setShowContinue(true), 500);
+      }
+    }, 20);
+    typingIntervalRef.current = interval;
+  }
+
+  // Skip typing
+  function skipTyping() {
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
     }
-  }, 20);
-}
+    setStoryText(fullStory);
+    setIsTyping(false);
+    setShowContinue(true);
+  }
 
   return (
     <>
@@ -88,6 +103,7 @@ function startTyping() {
             background: "radial-gradient(circle at top, var(--bg-dark) 0%, var(--bg-deep) 70%)",
             opacity: loadProgress >= 100 ? 0 : 1,
             transition: "opacity 0.6s ease-out",
+            pointerEvents: loadProgress >= 100 ? "none" : "auto",
           }}
         >
           <div
@@ -103,9 +119,17 @@ function startTyping() {
                 "0 0 40px rgba(15, 23, 42, 0.95), 0 0 60px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
             }}
           >
-            <div className="hud-title" style={{ marginBottom: "var(--spacing-md)" }}>
-  INITIALISATION EN COURS
-</div>
+            <div style={{ 
+              fontFamily: "var(--mono)", 
+              fontSize: "0.75rem", 
+              letterSpacing: "0.25em", 
+              textTransform: "uppercase", 
+              color: "var(--primary)", 
+              fontWeight: 700,
+              marginBottom: "var(--spacing-md)" 
+            }}>
+              INITIALISATION EN COURS
+            </div>
             <div
               style={{
                 fontFamily: "var(--mono)",
@@ -121,16 +145,16 @@ function startTyping() {
             </div>
 
             <div style={{ marginTop: "var(--spacing-md)", textAlign: "left", fontFamily: "var(--mono)", fontSize: "0.7rem", color: "var(--muted-dark)", maxWidth: "320px", margin: "var(--spacing-md) auto 0" }}>
-  <div style={{ marginBottom: "6px", opacity: 0, animation: "bootLine 0.4s ease-out 0.3s forwards" }}>
-    › Initialisation protocole...
-  </div>
-  <div style={{ marginBottom: "6px", opacity: 0, animation: "bootLine 0.4s ease-out 0.6s forwards" }}>
-    › Connexion serveur SANTA...
-  </div>
-  <div style={{ marginBottom: "6px", opacity: 0, animation: "bootLine 0.4s ease-out 0.9s forwards" }}>
-    › Chargement interface HUD...
-  </div>
-</div>
+              <div style={{ marginBottom: "6px", opacity: 0, animation: "bootLine 0.4s ease-out 0.3s forwards" }}>
+                › Initialisation protocole...
+              </div>
+              <div style={{ marginBottom: "6px", opacity: 0, animation: "bootLine 0.4s ease-out 0.6s forwards" }}>
+                › Connexion serveur SANTA...
+              </div>
+              <div style={{ marginBottom: "6px", opacity: 0, animation: "bootLine 0.4s ease-out 0.9s forwards" }}>
+                › Chargement mission...
+              </div>
+            </div>
 
             <div
               style={{
@@ -173,8 +197,8 @@ function startTyping() {
       {/* Main Content */}
       <div
         style={{
-          maxWidth: "860px",
-          margin: "60px auto",
+          maxWidth: "900px",
+          margin: "60px auto 80px",
           padding: "0 var(--spacing-lg)",
           opacity: shellVisible ? 1 : 0,
           transform: shellVisible ? "translateY(0)" : "translateY(20px)",
@@ -186,22 +210,39 @@ function startTyping() {
         <div className="cyberpunk-panel">
           <div style={{ position: "relative", zIndex: 1 }}>
             {/* Header */}
-            <div className="fade-in-up" style={{ animationDelay: "0.2s", marginBottom: "var(--spacing-md)" }}>
-              <div className="hud-title" style={{ marginBottom: "var(--spacing-xs)" }}>
+            <div style={{ opacity: 0, animation: "fadeInUp 0.6s ease-out 0.2s forwards", marginBottom: "var(--spacing-md)" }}>
+              <div style={{ 
+                fontFamily: "var(--mono)", 
+                fontSize: "0.75rem", 
+                letterSpacing: "0.25em", 
+                textTransform: "uppercase", 
+                color: "var(--primary)", 
+                fontWeight: 700,
+                marginBottom: "var(--spacing-xs)" 
+              }}>
                 📡 TRANSMISSION SÉCURISÉE - SANTA
               </div>
-              <h1 className="main-title" style={{ marginBottom: "var(--spacing-xs)" }}>
+              <h1 style={{
+                fontSize: "2.8rem",
+                fontWeight: 900,
+                background: "linear-gradient(135deg, var(--primary), #38bdf8)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                textShadow: "0 0 60px rgba(125,211,252,0.4)",
+                marginBottom: "var(--spacing-xs)"
+              }}>
                 READY PLAYER SANTA™
               </h1>
-              <p className="text-sm text-zinc-400">
+              <p style={{ fontSize: "0.9rem", color: "var(--muted)" }}>
                 Mission 1 · Protocole d'activation
               </p>
             </div>
 
             <div
-              className="fade-in-up"
               style={{
-                animationDelay: "0.4s",
+                opacity: 0,
+                animation: "fadeInUp 0.6s ease-out 0.4s forwards",
                 height: "1px",
                 background: "linear-gradient(to right, transparent, var(--primary), transparent)",
                 marginBottom: "var(--spacing-lg)",
@@ -210,9 +251,9 @@ function startTyping() {
 
             {/* Story */}
             <div
-              className="fade-in-up"
               style={{
-                animationDelay: "0.6s",
+                opacity: 0,
+                animation: "fadeInUp 0.6s ease-out 0.6s forwards",
                 fontFamily: "var(--mono)",
                 fontSize: "0.9rem",
                 color: "var(--text)",
@@ -222,7 +263,7 @@ function startTyping() {
               }}
             >
               {storyText}
-              {storyText.length < fullStory.length && (
+              {isTyping && (
                 <span
                   style={{
                     display: "inline-block",
@@ -236,8 +277,41 @@ function startTyping() {
               )}
             </div>
 
+            {/* Skip Button */}
+            {isTyping && (
+              <div style={{ textAlign: "center", marginBottom: "var(--spacing-lg)", animation: "fadeInUp 0.6s ease-out" }}>
+                <button
+                  onClick={skipTyping}
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: "0.75rem",
+                    letterSpacing: "0.15em",
+                    padding: "10px 24px",
+                    borderRadius: "8px",
+                    background: "rgba(148,163,184,.08)",
+                    border: "1px solid rgba(148,163,184,.25)",
+                    color: "var(--muted)",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(148,163,184,.15)";
+                    e.currentTarget.style.borderColor = "var(--muted)";
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(148,163,184,.08)";
+                    e.currentTarget.style.borderColor = "rgba(148,163,184,.25)";
+                    e.currentTarget.style.transform = "translateY(0)";
+                  }}
+                >
+                  ⏭️ SKIP
+                </button>
+              </div>
+            )}
+
             {/* Mission panel */}
-            {showMission && (
+            {showContinue && (
               <div
                 style={{
                   background: "rgba(15, 23, 42, 0.8)",
@@ -261,7 +335,7 @@ function startTyping() {
                 >
                   MISSION 1 – PARAMÈTRES
                 </h3>
-                <p className="text-sm text-zinc-300" style={{ marginBottom: "var(--spacing-md)" }}>
+                <p style={{ fontSize: "0.9rem", color: "var(--text)", marginBottom: "var(--spacing-md)" }}>
                   Votre première mission est simple, et pourtant déterminante :
                 </p>
                 <ul style={{ listStyle: "none", padding: 0 }}>
@@ -308,14 +382,25 @@ function startTyping() {
             )}
 
             {/* Bouton retour */}
-            <div className="text-center" style={{ marginTop: "var(--spacing-xl)" }}>
-              <button
-                onClick={() => router.push("/")}
-                className="cyberpunk-btn"
-              >
-                ← RETOUR À L'ACCUEIL
-              </button>
-            </div>
+            {showContinue && (
+              <div style={{ textAlign: "center", marginTop: "var(--spacing-xl)" }}>
+                <button
+                  onClick={() => router.push("/")}
+                  className="cyberpunk-btn"
+                  style={{ 
+                    animation: "fadeInUp 0.6s ease-out 0.3s backwards",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-3px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                  }}
+                >
+                  ← RETOUR À L'ACCUEIL
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
