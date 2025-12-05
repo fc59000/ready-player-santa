@@ -365,6 +365,7 @@ Je vous accompagne.
                 style={{ 
                   position: "relative",
                   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  overflow: "visible", // ✅ Permet au badge de déborder
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = "translateY(-4px)";
